@@ -1,6 +1,7 @@
 /**
  * @author Nayan Kumar G
  * purpose : Starts spring application
+ * date    :25-02-2020
  * 
  */
 package com.bridgelabz.fundoonotes;
@@ -14,5 +15,4 @@ public class FundooNotesApiApplication {
 		SpringApplication.run(FundooNotesApiApplication.class, args);
 		
 	}
-
 }
