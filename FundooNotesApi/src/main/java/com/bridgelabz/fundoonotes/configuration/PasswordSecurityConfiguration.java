@@ -1,7 +1,7 @@
 /**
  * @author Nayan Kumar G
  * purpose : Configuration for BCryptPasswordEncoder
- * 
+ * date    :25-02-2020
  */
 
 package com.bridgelabz.fundoonotes.configuration;
