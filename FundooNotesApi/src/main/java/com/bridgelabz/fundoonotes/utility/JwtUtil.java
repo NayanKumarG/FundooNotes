@@ -1,46 +1,45 @@
-
+/**
+ * @author Nayan Kumar G
+ * purpose : To generate jwt and parse the token
+ * date    :26-02-2020
+ */
 
 package com.bridgelabz.fundoonotes.utility;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import com.bridgelabz.fundoonotes.dto.UserDto;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class JwtUtil {
 
-	//@Value("${jwt.secret}")
+
 	private String secretKey = "secret";
 	
-	@Autowired
-	private UserDto userDto;
 	
-	public String generateToken(UserDto userDto)
+	public String generateToken(long userId)
 	{
 		
-		Claims claims = Jwts.claims().setSubject(userDto.getEmail());
+		Claims claims = Jwts.claims().setSubject(Long.toString(userId));
+
 		return Jwts.builder().setClaims(claims).signWith(SignatureAlgorithm.HS512, secretKey).compact();
-		
 	}
 	
-	public UserDto parseToken(String token)
+	public long parseToken(String token)
 	{
 		try
 		{
 			Claims body = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
-			userDto.setEmail((String)body.get("email"));
-			return userDto;
+			return Long.parseLong(body.getSubject());
 		} catch (JwtException | ClassCastException e) {
-            return null;
-		
+            log.error("parsing is not possible");
+			
 		}
+		return 0;
 		
 	}
+
 }
