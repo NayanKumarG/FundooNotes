@@ -6,19 +6,22 @@
 package com.bridgelabz.fundoonotes.controller;
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
+import com.bridgelabz.fundoonotes.response.Response;
 import com.bridgelabz.fundoonotes.service.UserService;
 
 @RestController
@@ -31,47 +34,86 @@ public class UserController {
 	/**
 	 * Api for user registration
 	 * @param userDto creates object request by user
-	 * @return response to the user
+	 * @return response for user registration
 	 */
-	@PostMapping(value = "/users/register")
-	public ResponseEntity<String> userRegistration(@RequestBody UserDto userDto)
+	@PostMapping("/users/register")
+	public ResponseEntity<Response> userRegistration(@RequestBody UserDto userDto)
 	{
 
-		userService.addUser(userDto);
-		return new ResponseEntity<String>("Registration success", HttpStatus.OK);
+		if(userService.addUser(userDto))
 
+			return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Registration success" , 302 ,userDto));
+
+
+		return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body(new Response("User already exist with this mail Id", 406));	
 	}
 
 	/**
 	 * 
 	 * @param userLogindto creates object request by user
-	 * @return response to the user
+	 * @return response of user login
 	 */
 	@PostMapping("/users/login")
-	public ResponseEntity<String> userLogin(@RequestBody UserLoginDto userLoginDto)
+	public ResponseEntity<Response> userLogin(@RequestBody UserLoginDto userLoginDto)
 	{
-		
-		if(userService.verifyPassword(userLoginDto))
-		
-		return new ResponseEntity<String>("Login success", HttpStatus.OK);
-			
-		return new ResponseEntity<String>("Enter correct credentials", HttpStatus.OK);
+
+		if(userService.verifyLogin(userLoginDto))
+
+			return ResponseEntity.status(HttpStatus.ACCEPTED).body(new Response("Login Success" , 200 , userLoginDto));
+
+		return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new Response("incorrect mail or password" , 406));
 	}
 	/**
 	 * 
-	 * @param token taken by the user to verify mail
-	 * @return response to the user
+	 * @param token taken by the url to verify mail
+	 * @return response of verification
 	 */
-	@PostMapping("/users/verifyMail/{token}")
-	public ResponseEntity<String> userVerification(@PathVariable String token)
+	@GetMapping("/users/verifyMail/{token}")
+	public ResponseEntity<Response> userVerification(@PathVariable String token)
 	{
-		if(userService.updateMailVerification(token)) {
+		if(userService.updateMailVerification(token)) 
 
-			return new ResponseEntity<String>("Verification success", HttpStatus.OK);
-		}
-			
-		return new ResponseEntity<String>("Verification failed", HttpStatus.OK);
+			return ResponseEntity.status(HttpStatus.ACCEPTED).body(new Response("verification success"));
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("Verification failed:"));
+
 	}
+
+
+	/**
+	 * 
+	 * @param email taken from url
+	 * @return response of user verification
+	 */
+	@PostMapping("/users/forgotPassword")
+	public ResponseEntity<Response> forgotPassword(@RequestParam("email") String email)
+	{
+		if(userService.confirmMail(email))
+
+			return ResponseEntity.status(HttpStatus.FOUND).body(new Response("User verified"));
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("User account not present"));
+
+	}
+
+	/**
+	 * 
+	 * @param updatePasswordDto creates object for updatePasswordDto
+	 * @param token taken from url
+	 * @return response for password updation
+	 */
+	@PutMapping("/updatePassword/{token}")
+	public ResponseEntity<Response> updatePassword( @RequestBody UpdatePasswordDto updatePasswordDto , @PathVariable String token){
+
+		if(userService.updatePassword(updatePasswordDto , token))
+
+			return ResponseEntity.status(HttpStatus.OK).body(new Response("Password updated"));
+
+
+		return ResponseEntity.status(HttpStatus.NOT_MODIFIED).body(new Response("Confirm mail verification"));	
+
+	}
+
 
 	/**
 	 * 
@@ -93,8 +135,12 @@ public class UserController {
 	{
 		userService.deleteUser(userId);
 	}
-	
-	
+
+
+	/**
+	 * 
+	 * @return list of users
+	 */
 	@GetMapping(value = "/users")
 	public List<User> getUsers()
 	{
@@ -103,7 +149,7 @@ public class UserController {
 
 
 
-   
+
 
 }
 
