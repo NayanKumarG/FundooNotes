@@ -7,6 +7,7 @@ package com.bridgelabz.fundoonotes.service;
 import java.util.List;
 import java.util.Optional;
 
+import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
@@ -14,11 +15,13 @@ import com.bridgelabz.fundoonotes.entity.User;
 
 public interface UserService {
 	
-	void addUser(UserDto userDto);
+	boolean addUser(UserDto userDto);
+	boolean updateMailVerification(String token);
+	boolean verifyLogin(UserLoginDto userLoginDto);
+	boolean isMailExist(String email);
+	boolean confirmMail(String emailId);
+	boolean updatePassword(UpdatePasswordDto updatePasswordDto, String token);
 	List<User> getUsers();
 	Optional<User> getUser(long userId);
 	void deleteUser(long userId);
-	boolean updateMailVerification(String token);
-	boolean verifyPassword(UserLoginDto userLoginDto);
-
 }
