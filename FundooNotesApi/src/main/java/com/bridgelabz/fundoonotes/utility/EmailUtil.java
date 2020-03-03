@@ -65,4 +65,9 @@ public class EmailUtil {
      }
 	
 	}
+	
+	public static String createLink(String url , String token)
+	{
+		return url+""+token;
+	}
 }
