@@ -6,7 +6,6 @@
 
 package com.bridgelabz.fundoonotes.service;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,13 +13,13 @@ import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
 import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
@@ -39,9 +38,9 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private UserRepository userRepository;
 
-//	@Autowired
-//	private User user;
-	
+	//	@Autowired
+	//	private User user;
+
 	@Autowired
 	private BCryptPasswordEncoder bcryptPasswordEncoder;
 
@@ -53,36 +52,153 @@ public class UserServiceImpl implements UserService {
 
 	@Autowired
 	private EmailModel emailModel;
-	
-	User user = null;
+
+
+	private User user = null;
 
 	/**
-	 * logic to register for user
+	 * method to register for user
 	 */
 	@Transactional
 	@Override
-	public void addUser(UserDto userDto) {
-		
-		user = new User();
-		BeanUtils.copyProperties(userDto , user);
-		user.setDateTime(LocalDateTime.now());
-		user.setPassword(bcryptPasswordEncoder.encode((userDto.getPassword())));
-		user.setVerified(false);
-		Session session = entityManager.unwrap(Session.class);
-		session.save(user);
-		//userRepository.save(user);
+	public boolean addUser(UserDto userDto) {
 
-		/*String token = jwtUtil.generateToken(user.getId());
-		log.info("Generated token:"+token);
-		log.info("Decrypted:"+jwtUtil.parseToken(token));*/
-		String link ="http://localhost:8080/users/verifyMail/"+jwtUtil.generateToken(user.getId());
-		emailModel.setMessage(link);
-		emailModel.setEmail(userDto.getEmail());
-		emailModel.setSubject("Click link to Verify ");
-		EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
+		if(!isMailExist(userDto.getEmail()))
+		{
+			user = new User();
+			BeanUtils.copyProperties(userDto , user);
+			user.setDateTime(LocalDateTime.now());
+			user.setPassword(bcryptPasswordEncoder.encode((userDto.getPassword())));
+			user.setVerified(false);
+			Session session = entityManager.unwrap(Session.class);
+			session.save(user);
+
+			/*userRepository.save(user);
+			String token = jwtUtil.generateToken(user.getId());
+			log.info("Generated token:"+token);
+			log.info("Decrypted:"+jwtUtil.parseToken(token));*/
+
+			emailModel.setMessage(EmailUtil.createLink("http://localhost:8080/users/verifyMail/", jwtUtil.generateToken(user.getId())));
+			emailModel.setEmail(userDto.getEmail());
+			emailModel.setSubject("Click link to Verify ");
+			EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * @param userLoginDto object for login
+	 * @return true if password match
+	 */
+	@Override
+	public boolean verifyLogin(UserLoginDto userLoginDto) {
+		String mail = userLoginDto.getEmail();
+		user = new User();
+		if(findByMail(mail)!=null)
+		{
+			user = findByMail(mail);
+			if(user.isVerified()==true && bcryptPasswordEncoder.matches(userLoginDto.getPassword(), user.getPassword()))
+				return true;
+
+		}
+		return false;
+	}
+
+	/**
+	 * @param token to get the userId
+	 * @return true if update success
+	 */
+	@Transactional
+	@Override
+	public boolean updatePassword(UpdatePasswordDto updatePasswordDto, String token) {
+		long userId = jwtUtil.parseToken(token);
+		Optional<User> user = userRepository.findById(userId);
+		if(user!=null && user.get().getEmail().equals(updatePasswordDto.getEmail()) && updatePasswordDto.getPassword().equals(updatePasswordDto.getConfirmPassword()))
+		{
+			Session session = entityManager.unwrap(Session.class);
+			Query<?> query = session.createQuery("update User set password=:password"+" where user_id =:userId");
+			query.setParameter("password", bcryptPasswordEncoder.encode(updatePasswordDto.getConfirmPassword()));
+			query.setParameter("userID", userId);
+			session.saveOrUpdate(user);
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+	/**
+	 * 
+	 * @param email_id to check user
+	 * @return true if user exist
+	 */
+	@Transactional
+	@Override
+	public boolean isMailExist(String email_id)
+	{
+		Session session = entityManager.unwrap(Session.class);
+		Query<?> query = session.createQuery("from User where email=:email_id");
+		query.setParameter("email_id", email_id);
+		return query.uniqueResult()!=null;
 
 	}
 
+	/**
+	 * 
+	 * @param email_id to find user by email
+	 * @return optional user if found
+	 */
+	@Transactional
+	public User findByMail(String email_id)
+	{
+		Session session = entityManager.unwrap(Session.class);
+		Query<?> query = session.createQuery("from User where email=:email_id");
+		query.setParameter("email_id", email_id);
+		log.info("user"+query.uniqueResult());
+		return (User) query.uniqueResult();
+	}
+
+	/**
+	 * @param emailId to check user is present or not
+	 * @return true if user present
+	 */
+	@Override
+	public boolean confirmMail(String emailId) {
+
+		User user = findByMail(emailId);
+		if(user!=null)
+		{
+			emailModel.setMessage(EmailUtil.createLink("http://localhost:8080/updatePassword/", jwtUtil.generateToken(user.getId())));
+			emailModel.setEmail(emailId);
+			emailModel.setSubject("click link to get new password");
+			EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
+			return true;
+		}
+		return false;
+	}
+	/**
+	 * @param token to find user
+	 * @return true if user present
+	 */
+	@Transactional
+	@Override
+	public boolean updateMailVerification(String token) {
+		long id = jwtUtil.parseToken(token); 
+		user = new User();
+		if(id!=0)
+		{
+			Session session = entityManager.unwrap(Session.class);
+			Query<?> query = session.createQuery("update User set is_verified =:verified "+" where user_id =:u_id");
+			query.setParameter("verified", true);
+			query.setParameter("u_id" , id);
+			query.executeUpdate();
+			return true;
+		}
+		return false;
+
+	}
 	/**
 	 * Get the list of users
 	 */
@@ -122,55 +238,6 @@ public class UserServiceImpl implements UserService {
 		User user = session.get(User.class, userId);
 		session.delete(user);
 	}
-
-
-
-	/**
-	 * To verify the user
-	 */
-	@Transactional
-	@Override
-	public boolean updateMailVerification(String token) {
-		long id = jwtUtil.parseToken(token); 
-		user = new User();
-		if(id!=0)
-		{
-		Session session = entityManager.unwrap(Session.class);
-		Query query = session.createQuery("update User set is_verified =:verified "+" where user_id =:u_id");
-	    query.setParameter("verified", true);
-		query.setParameter("u_id" , id);
-		query.executeUpdate();
-		return true;
-		}
-		return false;
-		
-//		Session session = entityManager.unwrap(Session.class);
-//		
-//		user.setVerified(true);
-//		//session.saveOrUpdate(user);
-//		userRepository.save(user);
-	//	return true;
-		
-
-	}
-
-	@Transactional
-	@Override
-	public boolean verifyPassword(UserLoginDto userLoginDto) {
-		String password = bcryptPasswordEncoder.encode(userLoginDto.getPassword());
-		String email = userLoginDto.getEmail();
-		Session session = entityManager.unwrap(Session.class);
-		User user = session.get(User.class, email);
-		if(user!=null && password.equals(user.getPassword()))
-		{
-			return true;
-		}
-		
-		
-		return false;
-	}
-
-
 
 
 
