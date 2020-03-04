@@ -102,8 +102,8 @@ public class UserController {
 	 * @param token taken from url
 	 * @return response for password updation
 	 */
-	@PutMapping("/updatePassword/{token}")
-	public ResponseEntity<Response> updatePassword( @RequestBody UpdatePasswordDto updatePasswordDto , @PathVariable String token){
+	@PutMapping("/users/updatePassword/{token}")
+	public ResponseEntity<Response> updatePassword( @RequestBody UpdatePasswordDto updatePasswordDto , @PathVariable("token") String token){
 
 		if(userService.updatePassword(updatePasswordDto , token))
 
@@ -120,7 +120,7 @@ public class UserController {
 	 * @param userId given by the user to get the detail
 	 * @return returns user object
 	 */
-	@GetMapping(value = "/user/{userId}")
+	@GetMapping("/user/{userId}")
 	public Optional<User> getUser(@PathVariable long userId)
 	{
 		return userService.getUser(userId);
@@ -141,7 +141,7 @@ public class UserController {
 	 * 
 	 * @return list of users
 	 */
-	@GetMapping(value = "/users")
+	@GetMapping("/users")
 	public List<User> getUsers()
 	{
 		return userService.getUsers();
