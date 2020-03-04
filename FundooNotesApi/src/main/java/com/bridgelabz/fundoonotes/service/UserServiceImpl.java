@@ -23,6 +23,7 @@ import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
+import com.bridgelabz.fundoonotes.exception.UserException;
 import com.bridgelabz.fundoonotes.repository.UserRepository;
 import com.bridgelabz.fundoonotes.response.EmailModel;
 import com.bridgelabz.fundoonotes.utility.EmailUtil;
@@ -42,7 +43,7 @@ public class UserServiceImpl implements UserService {
 	//	private User user;
 
 	@Autowired
-	private BCryptPasswordEncoder bcryptPasswordEncoder;
+	private BCryptPasswordEncoder bcryptPasswordEncoder;   
 
 	@Autowired
 	private JwtUtil jwtUtil;
@@ -54,7 +55,7 @@ public class UserServiceImpl implements UserService {
 	private EmailModel emailModel;
 
 
-	private User user = null;
+	private User user = new User();
 
 	/**
 	 * method to register for user
@@ -65,7 +66,6 @@ public class UserServiceImpl implements UserService {
 
 		if(!isMailExist(userDto.getEmail()))
 		{
-			user = new User();
 			BeanUtils.copyProperties(userDto , user);
 			user.setDateTime(LocalDateTime.now());
 			user.setPassword(bcryptPasswordEncoder.encode((userDto.getPassword())));
@@ -84,7 +84,11 @@ public class UserServiceImpl implements UserService {
 			EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
 			return true;
 		}
-		return false;
+		else
+
+			throw new UserException("User already exist");
+
+
 	}
 
 	/**
@@ -94,10 +98,9 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean verifyLogin(UserLoginDto userLoginDto) {
 		String mail = userLoginDto.getEmail();
-		user = new User();
 		if(findByMail(mail)!=null)
 		{
-			user = findByMail(mail);
+		User user = findByMail(mail);
 			if(user.isVerified()==true && bcryptPasswordEncoder.matches(userLoginDto.getPassword(), user.getPassword()))
 				return true;
 
@@ -112,23 +115,35 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	@Override
 	public boolean updatePassword(UpdatePasswordDto updatePasswordDto, String token) {
-		long userId = jwtUtil.parseToken(token);
-		Optional<User> user = userRepository.findById(userId);
-		if(user!=null && user.get().getEmail().equals(updatePasswordDto.getEmail()) && updatePasswordDto.getPassword().equals(updatePasswordDto.getConfirmPassword()))
+		if(updatePasswordDto.getPassword().equals(updatePasswordDto.getConfirmPassword()))
 		{
-			Session session = entityManager.unwrap(Session.class);
-			Query<?> query = session.createQuery("update User set password=:password"+" where user_id =:userId");
-			query.setParameter("password", bcryptPasswordEncoder.encode(updatePasswordDto.getConfirmPassword()));
-			query.setParameter("userID", userId);
-			session.saveOrUpdate(user);
-			return true;
+			try
+			{
+				long userId = jwtUtil.parseToken(token);
+				log.info("my id:"+userId);
+				Optional<User> user = userRepository.findById(userId);
+				if(user!=null && user.get().getEmail().equals(updatePasswordDto.getEmail()))
+				{
+					Session session = entityManager.unwrap(Session.class);
+					Query<?> query = session.createQuery("update User set password=:password"+" where user_id =:userId");
+					query.setParameter("password", bcryptPasswordEncoder.encode(updatePasswordDto.getConfirmPassword()));
+					query.setParameter("userId", userId);
+					return query.executeUpdate()==1;		
+				}
+				
+				return false;
+				
+			}catch(Exception e)
+			{
+				throw new UserException("User Not found!!!");	
+			}
 		}
-		return false;
+		else
+			throw new UserException("Invalid credentiala!!");
+
+
+
 	}
-
-
-
-
 	/**
 	 * 
 	 * @param email_id to check user
@@ -170,7 +185,7 @@ public class UserServiceImpl implements UserService {
 		User user = findByMail(emailId);
 		if(user!=null)
 		{
-			emailModel.setMessage(EmailUtil.createLink("http://localhost:8080/updatePassword/", jwtUtil.generateToken(user.getId())));
+			emailModel.setMessage(EmailUtil.createLink("http://localhost:8080/users/updatePassword/", jwtUtil.generateToken(user.getId())));
 			emailModel.setEmail(emailId);
 			emailModel.setSubject("click link to get new password");
 			EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
@@ -186,7 +201,6 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean updateMailVerification(String token) {
 		long id = jwtUtil.parseToken(token); 
-		user = new User();
 		if(id!=0)
 		{
 			Session session = entityManager.unwrap(Session.class);
