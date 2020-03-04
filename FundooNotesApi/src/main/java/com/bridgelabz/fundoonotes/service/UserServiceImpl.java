@@ -7,8 +7,6 @@
 package com.bridgelabz.fundoonotes.service;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
-
 import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
@@ -24,7 +22,6 @@ import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
 import com.bridgelabz.fundoonotes.exception.UserException;
-import com.bridgelabz.fundoonotes.repository.UserRepository;
 import com.bridgelabz.fundoonotes.response.EmailModel;
 import com.bridgelabz.fundoonotes.utility.EmailUtil;
 import com.bridgelabz.fundoonotes.utility.JwtUtil;
@@ -36,11 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-	@Autowired
-	private UserRepository userRepository;
-
-	//	@Autowired
-	//	private User user;
 
 	@Autowired
 	private BCryptPasswordEncoder bcryptPasswordEncoder;   
@@ -68,11 +60,12 @@ public class UserServiceImpl implements UserService {
 		{
 			BeanUtils.copyProperties(userDto , user);
 			user.setDateTime(LocalDateTime.now());
+			
 			user.setPassword(bcryptPasswordEncoder.encode((userDto.getPassword())));
 			user.setVerified(false);
 			Session session = entityManager.unwrap(Session.class);
 			session.save(user);
-
+			
 			/*userRepository.save(user);
 			String token = jwtUtil.generateToken(user.getId());
 			log.info("Generated token:"+token);
@@ -105,7 +98,7 @@ public class UserServiceImpl implements UserService {
 				return true;
 
 		}
-		return false;
+		throw new UserException("user not found");
 	}
 
 	/**
@@ -121,13 +114,15 @@ public class UserServiceImpl implements UserService {
 			{
 				long userId = jwtUtil.parseToken(token);
 				log.info("my id:"+userId);
-				Optional<User> user = userRepository.findById(userId);
-				if(user!=null && user.get().getEmail().equals(updatePasswordDto.getEmail()))
+				User user = findById(userId);
+				if(user!=null && user.getEmail().equals(updatePasswordDto.getEmail()))
 				{
+					
 					Session session = entityManager.unwrap(Session.class);
-					Query<?> query = session.createQuery("update User set password=:password"+" where user_id =:userId");
+					Query<?> query = session.createQuery("update User set password=:password , update_date_time=:date"+" where user_id =:userId ");
 					query.setParameter("password", bcryptPasswordEncoder.encode(updatePasswordDto.getConfirmPassword()));
 					query.setParameter("userId", userId);
+					query.setParameter("date", LocalDateTime.now());
 					return query.executeUpdate()==1;		
 				}
 				
@@ -175,6 +170,15 @@ public class UserServiceImpl implements UserService {
 		return (User) query.uniqueResult();
 	}
 
+	@Transactional
+	public User findById(long id)
+	{
+		Session session = entityManager.unwrap(Session.class);
+		Query<?> query = session.createQuery("from User where user_id=:user_id");
+		query.setParameter("user_id", id);
+		return (User) query.uniqueResult();
+		
+	}
 	/**
 	 * @param emailId to check user is present or not
 	 * @return true if user present
@@ -191,7 +195,8 @@ public class UserServiceImpl implements UserService {
 			EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
 			return true;
 		}
-		return false;
+		
+		throw new UserException("user not found");
 	}
 	/**
 	 * @param token to find user
@@ -236,22 +241,15 @@ public class UserServiceImpl implements UserService {
 	 */
 	@Transactional
 	@Override
-	public Optional<User> getUser(long userId) {
+	public User getUser(String token) {
 
-		return userRepository.findById(userId);
+		long userId = jwtUtil.parseToken(token);
+		User user = findById(userId);
+		return user;
 
 	}
 
-	/**
-	 * Delete the user by userId
-	 */
-	@Transactional
-	@Override
-	public void deleteUser(long userId) {
-		Session session = entityManager.unwrap(Session.class);
-		User user = session.get(User.class, userId);
-		session.delete(user);
-	}
+
 
 
 
