@@ -1,7 +1,7 @@
 /**
  * @author Nayan Kumar G
  * purpose : Entity for User
- * 
+ * date    :25-02-2020
  */
 package com.bridgelabz.fundoonotes.entity;
 
@@ -12,11 +12,11 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.Transient;
 import javax.validation.constraints.Email;
 
 import org.springframework.stereotype.Component;
 import lombok.Data;
+
 @Data
 @Component
 @Entity
