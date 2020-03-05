@@ -1,0 +1,105 @@
+/**
+ * @author Nayan Kumar G
+ * purpose :Note repository which extends CrudRepository
+ * date    :03-03-2020
+ */
+package com.bridgelabz.fundoonotes.repository;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.transaction.Transactional;
+
+import org.hibernate.Session;
+import org.hibernate.query.Query;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.bridgelabz.fundoonotes.entity.NoteEntity;
+
+@Repository
+public class NoteRepository{ 
+	
+	@Autowired
+	private EntityManager entityManager;
+	
+
+	/**
+	 * 
+	 * @param noteEntity to save into database
+	 * @return noteEntity
+	 */
+	@Transactional
+	public NoteEntity saveOrUpdate(NoteEntity noteEntity)
+	{
+		Session session = entityManager.unwrap(Session.class);
+		session.saveOrUpdate(noteEntity);
+		return noteEntity;
+	}
+	
+	/**
+	 * 
+	 * @param id to fetch perticular note
+	 * @return fetched note
+	 */
+	@Transactional
+	public NoteEntity fetchById(long id)
+	{
+		Session session = entityManager.unwrap(Session.class);
+		Query<?> query = session.createQuery("from NoteEntity where note_id=:id");
+		query.setParameter("id", id);
+		return (NoteEntity) query.uniqueResult();
+	}
+	
+	/**
+	 * 
+	 * @param id note id to delete
+	 * @return true if deleted
+	 */
+	@Transactional
+	public boolean deleteNote(long id )
+	{
+		Session session = entityManager.unwrap(Session.class);
+		Query<?> query = session.createQuery("delete from NoteEntity where note_id=:id");
+		query.setParameter("id", id);
+		return query.executeUpdate()==1;
+	}
+	/**
+	 * 
+	 * @return list of notes
+	 */
+	@Transactional
+	public List<NoteEntity> getNotes() {
+
+		Session session = entityManager.unwrap(Session.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity" , NoteEntity.class);
+		List<NoteEntity> notes = new ArrayList<>();
+		query.getResultList().forEach(notes::add);
+		return notes;
+	
+	}
+	
+	/**
+	 * 
+	 * @return list of trashed notes
+	 */
+	@Transactional
+	public List<NoteEntity> getTrashedNotes()
+	{
+		Session session = entityManager.unwrap(Session.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity where is_trashed=true" , NoteEntity.class);
+		return query.getResultList();
+		
+		
+	}
+
+	/**
+	 * 
+	 * @return list of archieved notes
+	 */
+	public List<NoteEntity> getArchievedNotes() {
+		Session session = entityManager.unwrap(Session.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity where is_archieved=true" , NoteEntity.class);
+		return query.getResultList();
+	}
+}
