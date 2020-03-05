@@ -5,7 +5,6 @@
  */
 package com.bridgelabz.fundoonotes.controller;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,10 +41,10 @@ public class UserController {
 
 		if(userService.addUser(userDto))
 
-			return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Registration success" , 302 ,userDto));
+			return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Registration success" ,userDto));
 
 
-		return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body(new Response("User already exist with this mail Id", 406));	
+		return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body(new Response("User already exist with this mail Id"));	
 	}
 
 	/**
@@ -59,9 +58,9 @@ public class UserController {
 
 		if(userService.verifyLogin(userLoginDto))
 
-			return ResponseEntity.status(HttpStatus.ACCEPTED).body(new Response("Login Success" , 200 , userLoginDto));
+			return ResponseEntity.status(HttpStatus.ACCEPTED).body(new Response("Login Success"));
 
-		return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new Response("incorrect mail or password" , 406));
+		return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new Response("incorrect mail or password"));
 	}
 	/**
 	 * 
@@ -120,31 +119,26 @@ public class UserController {
 	 * @param userId given by the user to get the detail
 	 * @return returns user object
 	 */
-	@GetMapping("/user/{userId}")
-	public Optional<User> getUser(@PathVariable long userId)
+	@GetMapping("/users/getUser/{token}")
+	public ResponseEntity<Response> getUser(@PathVariable String token)
 	{
-		return userService.getUser(userId);
+		User user = userService.getUser(token);
+		if(user!=null)
+			
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("User found" , user));
+		
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("User Not found"));
 	}
-
-	/**
-	 * 
-	 * @param userId given by the user to delete user
-	 */
-	@GetMapping("/deleteUser/{userId}")
-	public void deleteUser(@PathVariable long userId)
-	{
-		userService.deleteUser(userId);
-	}
-
 
 	/**
 	 * 
 	 * @return list of users
 	 */
-	@GetMapping("/users")
-	public List<User> getUsers()
+	@GetMapping("/users/getUsers")
+	public ResponseEntity<Response> getUsers()
 	{
-		return userService.getUsers();
+		List<User> user = userService.getUsers();
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("users found" , user));
 	}
 
 
