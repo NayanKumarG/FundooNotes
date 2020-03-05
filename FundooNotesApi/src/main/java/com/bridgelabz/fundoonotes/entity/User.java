@@ -41,8 +41,10 @@ public class User {
 	@Column(name = "phone_number")
 	private long phoneNumber;
 	
-	@Column(name = "date")
+	@Column(name = "register_date")
 	private LocalDateTime dateTime;
+	
+	private LocalDateTime updateDateTime;
 	
 	@Column(name = "is_verified")
 	private boolean isVerified;
