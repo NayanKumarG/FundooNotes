@@ -22,6 +22,6 @@ public interface UserService {
 	boolean confirmMail(String emailId);
 	boolean updatePassword(UpdatePasswordDto updatePasswordDto, String token);
 	List<User> getUsers();
-	Optional<User> getUser(long userId);
-	void deleteUser(long userId);
+	User getUser(String token);
+	
 }
