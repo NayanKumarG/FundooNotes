@@ -22,6 +22,7 @@ import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
 import com.bridgelabz.fundoonotes.exception.UserException;
+import com.bridgelabz.fundoonotes.exception.UserNotFoundException;
 import com.bridgelabz.fundoonotes.response.EmailModel;
 import com.bridgelabz.fundoonotes.utility.EmailUtil;
 import com.bridgelabz.fundoonotes.utility.JwtUtil;
@@ -98,7 +99,7 @@ public class UserServiceImpl implements UserService {
 				return true;
 
 		}
-		throw new UserException("user not found");
+		throw new UserNotFoundException("user not found");
 	}
 
 	/**
@@ -130,11 +131,11 @@ public class UserServiceImpl implements UserService {
 				
 			}catch(Exception e)
 			{
-				throw new UserException("User Not found!!!");	
+				throw new UserNotFoundException("User Not found!!!");	
 			}
 		}
 		else
-			throw new UserException("Invalid credentiala!!");
+			throw new UserException("Invalid credential!!");
 
 
 
