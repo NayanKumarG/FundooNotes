@@ -4,7 +4,6 @@
  * date    :03-03-2020
  */
 package com.bridgelabz.fundoonotes.repository;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -43,6 +42,7 @@ public class NoteRepository{
 	 * @return fetched note
 	 */
 	@Transactional
+
 	public NoteEntity fetchById(long id)
 	{
 		Session session = entityManager.unwrap(Session.class);
@@ -73,11 +73,9 @@ public class NoteRepository{
 
 		Session session = entityManager.unwrap(Session.class);
 		Query<NoteEntity> query = session.createQuery("from NoteEntity" , NoteEntity.class);
-		List<NoteEntity> notes = new ArrayList<>();
-		query.getResultList().forEach(notes::add);
-		return notes;
+		return query.getResultList();
 	
-	}
+	}                  
 	
 	/**
 	 * 
@@ -90,7 +88,6 @@ public class NoteRepository{
 		Query<NoteEntity> query = session.createQuery("from NoteEntity where is_trashed=true" , NoteEntity.class);
 		return query.getResultList();
 		
-		
 	}
 
 	/**
@@ -102,4 +99,15 @@ public class NoteRepository{
 		Query<NoteEntity> query = session.createQuery("from NoteEntity where is_archieved=true" , NoteEntity.class);
 		return query.getResultList();
 	}
+
+	/**
+	 * 
+	 * @return list of pinned notes
+	 */
+	public List<NoteEntity> getpinnedNotes() {
+		Session session = entityManager.unwrap(Session.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity where is_pinned=true" , NoteEntity.class);
+		return query.getResultList();
+	}
+
 }
