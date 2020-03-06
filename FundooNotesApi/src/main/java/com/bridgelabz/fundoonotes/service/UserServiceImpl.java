@@ -137,6 +137,8 @@ public class UserServiceImpl implements UserService {
 		}
 		else
 			throw new UserException("Invalid credential!!");
+		
+	
 
 	}
 	/**
@@ -230,6 +232,7 @@ public class UserServiceImpl implements UserService {
 		List<User> users = query.getResultList();
 		//List<User> users = new ArrayList<>();
 		//userRepository.findAll().forEach(users::add);
+		users.sort((User user1 , User user2)->user1.getName().compareTo(user2.getName()));
 		return users;
 	}   
 
