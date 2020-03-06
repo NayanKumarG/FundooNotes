@@ -5,8 +5,6 @@
  */
 package com.bridgelabz.fundoonotes.service;
 import java.util.List;
-import java.util.Optional;
-
 import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
