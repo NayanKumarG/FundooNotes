@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.bridgelabz.fundoonotes.dto.NoteDto;
+import com.bridgelabz.fundoonotes.dto.NoteReminderDto;
 import com.bridgelabz.fundoonotes.dto.NoteUpdateDto;
 import com.bridgelabz.fundoonotes.entity.NoteEntity;
 import com.bridgelabz.fundoonotes.response.Response;
@@ -29,7 +31,7 @@ public class NoteController {
 
 	@Autowired
 	private NoteService noteService;
-	
+
 
 	/**
 	 * Api to create note
@@ -41,6 +43,7 @@ public class NoteController {
 	public ResponseEntity<Response> createNotes(@RequestBody NoteDto noteDto , @RequestHeader String token)
 	{
 		noteService.createNote(noteDto , token);
+		
 		return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Note created ", noteDto));
 
 	}
@@ -57,7 +60,7 @@ public class NoteController {
 		noteService.deleteNote(noteId , token);
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("note deleted saved into trash"));
 	}
-	
+
 	/**
 	 * Api to delete note permanently
 	 * @param noteId to delete note
@@ -70,7 +73,7 @@ public class NoteController {
 		noteService.deleteNotePermanently(noteId , token);
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("note deleted success"));
 	}
-	
+
 	/**
 	 * Api to pin the note
 	 * @param noteId to pin the note
@@ -83,7 +86,7 @@ public class NoteController {
 		noteService.pinOrUnpinNote(noteId , token);
 		return ResponseEntity.status(HttpStatus.OK).body(new Response(" pin note or unpin",200));
 	}
-	
+
 	/**
 	 * Api to archieve the note
 	 * @param noteId to archieve note
@@ -96,7 +99,7 @@ public class NoteController {
 		noteService.archieveNote(noteId , token);
 		return ResponseEntity.status(HttpStatus.OK).body(new Response(" archieve note",200));
 	}
-	
+
 	/**
 	 * Api to update note
 	 * @param noteUpdateDto to bind the request object
@@ -109,7 +112,7 @@ public class NoteController {
 		noteService.updateNote(noteUpdateDto , token);
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("update success"));
 	}
-	
+
 	/**
 	 * Api to get all notes
 	 * @param token to identify user
@@ -119,14 +122,14 @@ public class NoteController {
 	public ResponseEntity<Response> getAllNotes(@RequestHeader String token)
 	{
 		List<NoteEntity> notes = noteService.fetchAllNotes(token);
-		
+
 		if(notes.size()>0)
-			
-		return ResponseEntity.status(HttpStatus.OK).body(new Response("fetched all notes",notes));
-		
+
+			return ResponseEntity.status(HttpStatus.OK).body(new Response("fetched all notes",notes));
+
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("notes not found!! create note"));
 	}
-	
+
 
 	/**
 	 * Api to get trashed notes
@@ -138,15 +141,15 @@ public class NoteController {
 	{
 		List<NoteEntity> notes = noteService.fetchTrashedNote(token);
 		if(notes.size()>0)
-			
-		return ResponseEntity.status(HttpStatus.OK).body(new Response("fetched trashed note",notes));
-		
+
+			return ResponseEntity.status(HttpStatus.OK).body(new Response("fetched trashed note",notes));
+
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("Trashed note not found"));
 	}
-	
+
 	/**
-	 * 
-	 * @param token
+	 * Api to get archieved notes
+	 * @param token to get user id
 	 * @return list of notes
 	 */
 	@GetMapping("/notes/archievedNotes")
@@ -154,13 +157,70 @@ public class NoteController {
 	{
 		List<NoteEntity> notes = noteService.fetchArchievedNotes(token);
 		if(notes.size()>0)
-			
+
 			return ResponseEntity.status(HttpStatus.OK).body(new Response("fetched archieved note",notes));
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("archieved note not found"));
+	}
+
+	/**
+	 * Api to get pinned notes
+	 * @param token to get user id
+	 * @return list of pinned notes
+	 */
+	@GetMapping("/notes/pinnedNotes")
+	public ResponseEntity<Response> getPinnedNotes(@RequestHeader String token)
+	{
+		List<NoteEntity> notes = noteService.fetchPinnedNotes(token);
+		
+		if(notes.size()>0)
 			
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("archieved note not found"));
+			return ResponseEntity.status(HttpStatus.OK).body(new Response("fetched pinned note",notes));
+		
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("pinned note not found"));
 	}
 	
+	/**
+	 * Api to add reminder to note
+	 * @param noteReminderDto to map the reminder data
+	 * @param token to get user id
+	 * @param noteId to add reminder
+	 * 
+	 */
+	@PostMapping("/notes/noteReminder")
+	public ResponseEntity<Response> addReminder(@RequestBody NoteReminderDto noteReminderDto ,  @RequestHeader String token , @RequestParam long noteId )
+	{
+		
+		noteService.addReminder(noteReminderDto , token , noteId);
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("reminder added for note"));
+		
+	}
 	
+	/**
+	 * Api to remove reminder
+	 * @param token to identify user
+	 * @param noteId to delete added reminder
+	 * 
+	 */
+	@PostMapping("/notes/deleteReminder")
+	public ResponseEntity<Response> deleteNoteReminder(@RequestHeader String token , @RequestParam long noteId)
+	{
+		noteService.deleteNoteReminder(token , noteId);
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("reminder removed for note"));
+	}
 	
+	/**
+	 * Api to add color to note
+	 * @param noteId to add color
+	 * @param color type of color added
+	 * @param token to get user id
+	 * @return updated note
+	 */
+	@PostMapping("/notes/addColor")
+	public ResponseEntity<Response> addNoteColor(@RequestParam long noteId , @RequestParam String color , @RequestParam String token)
+	{
+		noteService.addNoteColor(noteId , color , token);
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("color update for note"));
+	}
 
 }
