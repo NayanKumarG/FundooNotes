@@ -4,8 +4,6 @@
  * date    :04-04-2020
  */
 package com.bridgelabz.fundoonotes.dto;
-import java.time.LocalDateTime;
-
 import lombok.Data;
 
 @Data
