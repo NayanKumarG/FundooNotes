@@ -1,7 +1,7 @@
 /**
  * @author Nayan Kumar G
  * purpose :Custom exception for Note Module
- * date    :04-04-2020
+ * date    :05-03-2020
  */
 package com.bridgelabz.fundoonotes.exception;
 import lombok.Getter;
