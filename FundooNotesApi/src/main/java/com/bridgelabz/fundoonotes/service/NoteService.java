@@ -14,17 +14,17 @@ import com.bridgelabz.fundoonotes.entity.NoteEntity;
 
 public interface NoteService {
 
-	void createNote(NoteDto noteDto, String token);
+	boolean createNote(NoteDto noteDto, String token);
 
-	void deleteNote(long noteId, String token);
+	boolean deleteNote(long noteId, String token);
 
-	void deleteNotePermanently(long noteId, String token);
+	boolean deleteNotePermanently(long noteId, String token);
 
-	void pinOrUnpinNote(long noteId, String token);
+	boolean pinOrUnpinNote(long noteId, String token);
 
-	void archieveNote(long noteId, String token);
+	boolean archieveNote(long noteId, String token);
 
-	void updateNote(NoteUpdateDto noteUpdateDto, String token);
+	boolean updateNote(NoteUpdateDto noteUpdateDto, String token);
 
 	List<NoteEntity> fetchAllNotes(String token);
 
@@ -34,13 +34,13 @@ public interface NoteService {
 
 	List<NoteEntity> fetchPinnedNotes(String token);
 
-	void addReminder(NoteReminderDto noteReminderDto, String token, long noteId);
+	boolean addReminder(NoteReminderDto noteReminderDto, String token, long noteId);
 
 	NoteEntity getNote(long note_id);
 
-	void deleteNoteReminder(String token, long noteId);
+	boolean deleteNoteReminder(String token, long noteId);
 
-	void addNoteColor(long noteId, String color, String token);
+	boolean addNoteColor(long noteId, String color, String token);
 
 	
 }
