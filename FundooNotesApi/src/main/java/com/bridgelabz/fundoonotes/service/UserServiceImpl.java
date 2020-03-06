@@ -21,6 +21,7 @@ import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
+import com.bridgelabz.fundoonotes.exception.InvalidTokenException;
 import com.bridgelabz.fundoonotes.exception.UserException;
 import com.bridgelabz.fundoonotes.exception.UserNotFoundException;
 import com.bridgelabz.fundoonotes.response.EmailModel;
@@ -126,18 +127,16 @@ public class UserServiceImpl implements UserService {
 					query.setParameter("date", LocalDateTime.now());
 					return query.executeUpdate()==1;		
 				}
-				
-				return false;
+				else
+				throw new UserNotFoundException("User Not found!!!");
 				
 			}catch(Exception e)
 			{
-				throw new UserNotFoundException("User Not found!!!");	
+				throw new InvalidTokenException("Invalid token!!!");	
 			}
 		}
 		else
 			throw new UserException("Invalid credential!!");
-
-
 
 	}
 	/**
@@ -197,7 +196,7 @@ public class UserServiceImpl implements UserService {
 			return true;
 		}
 		
-		throw new UserException("user not found");
+		throw new UserNotFoundException("user not found");
 	}
 	/**
 	 * @param token to find user
