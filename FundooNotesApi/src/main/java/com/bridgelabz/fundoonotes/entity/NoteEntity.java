@@ -41,6 +41,8 @@ public class NoteEntity {
 	
 	private LocalDateTime reminder;
 	
+	private String color;
+	
 	
 	
 }
