@@ -240,7 +240,7 @@ public class UserServiceImpl implements UserService {
 
 
 	/**
-	 * get the user detail by userId
+	 * get the user detail by userId.
 	 */
 	@Transactional
 	@Override
