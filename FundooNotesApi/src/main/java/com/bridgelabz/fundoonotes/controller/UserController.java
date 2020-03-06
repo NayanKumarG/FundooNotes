@@ -138,13 +138,10 @@ public class UserController {
 	public ResponseEntity<Response> getUsers()
 	{
 		List<User> user = userService.getUsers();
-		user.sort((User user1 , User user2)->user1.getName().compareTo(user2.getName()));
+		
 		
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("users found" , user));
 	}
-
-
-
 
 
 }
