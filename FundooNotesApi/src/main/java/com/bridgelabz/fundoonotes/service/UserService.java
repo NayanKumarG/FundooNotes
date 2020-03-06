@@ -1,6 +1,6 @@
 /**
  * @author Nayan Kumar G
- * purpose : Interface for user Service
+ * purpose : Interface for users Service
  * date    :25-02-2020
  */
 package com.bridgelabz.fundoonotes.service;
