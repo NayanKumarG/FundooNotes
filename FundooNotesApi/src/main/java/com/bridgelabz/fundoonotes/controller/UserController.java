@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
@@ -28,6 +27,7 @@ public class UserController {
 
 	@Autowired
 	private UserService userService;
+
 
 
 	/**
@@ -48,7 +48,7 @@ public class UserController {
 	}
 
 	/**
-	 * 
+	 * Api to user login
 	 * @param userLogindto creates object request by user
 	 * @return response of user login
 	 */
@@ -63,7 +63,7 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new Response("incorrect mail or password"));
 	}
 	/**
-	 * 
+	 * Api to verify mail
 	 * @param token taken by the url to verify mail
 	 * @return response of verification
 	 */
@@ -80,7 +80,7 @@ public class UserController {
 
 
 	/**
-	 * 
+	 * Api for forgot password
 	 * @param email taken from url
 	 * @return response of user verification
 	 */
@@ -96,7 +96,7 @@ public class UserController {
 	}
 
 	/**
-	 * 
+	 * Api for update password
 	 * @param updatePasswordDto creates object for updatePasswordDto
 	 * @param token taken from url
 	 * @return response for password updation
@@ -115,7 +115,7 @@ public class UserController {
 
 
 	/**
-	 * 
+	 * Api to get perticular user
 	 * @param userId given by the user to get the detail
 	 * @return returns user object
 	 */
@@ -131,13 +131,15 @@ public class UserController {
 	}
 
 	/**
-	 * 
+	 * Api to get all users
 	 * @return list of users
 	 */
 	@GetMapping("/users/getUsers")
 	public ResponseEntity<Response> getUsers()
 	{
 		List<User> user = userService.getUsers();
+		user.sort((User user1 , User user2)->user1.getName().compareTo(user2.getName()));
+		
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("users found" , user));
 	}
 
