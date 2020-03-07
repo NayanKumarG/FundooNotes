@@ -112,9 +112,15 @@ public class UserServiceImpl implements UserService {
 	public boolean updatePassword(UpdatePasswordDto updatePasswordDto, String token) {
 		if(updatePasswordDto.getPassword().equals(updatePasswordDto.getConfirmPassword()))
 		{
+			long userId = 0; 
 			try
 			{
-				long userId = jwtUtil.parseToken(token);
+				userId = jwtUtil.parseToken(token);
+			
+			}catch(Exception e)
+				{
+					throw new InvalidTokenException("Invalid token!!!");	
+				}
 				log.info("my id:"+userId);
 				User user = findById(userId);
 				if(user!=null && user.getEmail().equals(updatePasswordDto.getEmail()))
@@ -130,11 +136,8 @@ public class UserServiceImpl implements UserService {
 				else
 				throw new UserNotFoundException("User Not found!!!");
 				
-			}catch(Exception e)
-			{
-				throw new InvalidTokenException("Invalid token!!!");	
 			}
-		}
+		
 		else
 			throw new UserException("Invalid credential!!");
 		
