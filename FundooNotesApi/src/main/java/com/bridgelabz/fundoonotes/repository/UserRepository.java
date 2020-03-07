@@ -12,6 +12,4 @@ import com.bridgelabz.fundoonotes.entity.User;
 @Repository
 public interface UserRepository extends CrudRepository<User, Long> {
 	
-
-	
 }
