@@ -6,12 +6,16 @@
 package com.bridgelabz.fundoonotes.entity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.validation.constraints.Email;
 
 import org.springframework.stereotype.Component;
@@ -48,6 +52,9 @@ public class User {
 	
 	@Column(name = "is_verified")
 	private boolean isVerified;
-		
+	
+	@OneToMany(cascade = CascadeType.ALL)
+	@JoinColumn(name = "user_id")
+	private List<NoteEntity> notes;
 	
 }
