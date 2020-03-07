@@ -69,10 +69,11 @@ public class NoteRepository{
 	 * @return list of notes
 	 */
 	@Transactional
-	public List<NoteEntity> getNotes() {
+	public List<NoteEntity> getNotes(long userId) {
 
 		Session session = entityManager.unwrap(Session.class);
-		Query<NoteEntity> query = session.createQuery("from NoteEntity" , NoteEntity.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity where user_id=:userId" , NoteEntity.class);
+		query.setParameter("userId", userId);
 		return query.getResultList();
 	
 	}                  
@@ -82,10 +83,12 @@ public class NoteRepository{
 	 * @return list of trashed notes
 	 */
 	@Transactional
-	public List<NoteEntity> getTrashedNotes()
+	public List<NoteEntity> getTrashedNotes(long userId)
 	{
 		Session session = entityManager.unwrap(Session.class);
-		Query<NoteEntity> query = session.createQuery("from NoteEntity where is_trashed=true" , NoteEntity.class);
+		//Query<NoteEntity> query = session.createQuery("from NoteEntity where user_id=:userId and is_trashed=true" , NoteEntity.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity where user_id=:userId" , NoteEntity.class);
+		query.setParameter("userId", userId);
 		return query.getResultList();
 		
 	}
@@ -94,9 +97,10 @@ public class NoteRepository{
 	 * 
 	 * @return list of archieved notes
 	 */
-	public List<NoteEntity> getArchievedNotes() {
+	public List<NoteEntity> getArchievedNotes(long userId) {
 		Session session = entityManager.unwrap(Session.class);
-		Query<NoteEntity> query = session.createQuery("from NoteEntity where is_archieved=true" , NoteEntity.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity where user_id=:userId and is_archieved=true" , NoteEntity.class);
+		query.setParameter("userId", userId);
 		return query.getResultList();
 	}
 
@@ -104,9 +108,10 @@ public class NoteRepository{
 	 * 
 	 * @return list of pinned notes
 	 */
-	public List<NoteEntity> getpinnedNotes() {
+	public List<NoteEntity> getpinnedNotes(long userId) {
 		Session session = entityManager.unwrap(Session.class);
-		Query<NoteEntity> query = session.createQuery("from NoteEntity where is_pinned=true" , NoteEntity.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity where user_id=:userId and is_pinned=true" , NoteEntity.class);
+		query.setParameter("userId", userId);
 		return query.getResultList();
 	}
 
