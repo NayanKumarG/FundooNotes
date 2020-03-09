@@ -97,6 +97,7 @@ public class NoteRepository{
 	 * 
 	 * @return list of archieved notes
 	 */
+	@Transactional
 	public List<NoteEntity> getArchievedNotes(long userId) {
 		Session session = entityManager.unwrap(Session.class);
 		Query<NoteEntity> query = session.createQuery("from NoteEntity where user_id=:userId and is_archieved=true" , NoteEntity.class);
@@ -108,11 +109,29 @@ public class NoteRepository{
 	 * 
 	 * @return list of pinned notes
 	 */
+	@Transactional
 	public List<NoteEntity> getpinnedNotes(long userId) {
 		Session session = entityManager.unwrap(Session.class);
 		Query<NoteEntity> query = session.createQuery("from NoteEntity where user_id=:userId and is_pinned=true" , NoteEntity.class);
 		query.setParameter("userId", userId);
 		return query.getResultList();
 	}
+
+	/**
+	 * 
+	 * @param title to identify note
+	 * @param userId to get note for user
+	 * @return list of notes with same title
+	 */
+	@Transactional
+	public List<NoteEntity> getNotesByTitle(String title, long userId) {
+		Session session = entityManager.unwrap(Session.class);
+		Query<NoteEntity> query = session.createQuery("from NoteEntity where title=:title and user_id=:userId" , NoteEntity.class);
+		query.setParameter("title", title);
+		query.setParameter("userId", userId);
+		return query.getResultList();
+	}
+
+
 
 }
