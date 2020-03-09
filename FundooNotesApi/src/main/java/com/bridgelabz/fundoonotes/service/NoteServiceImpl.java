@@ -7,6 +7,9 @@ package com.bridgelabz.fundoonotes.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.transaction.Transactional;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -450,4 +453,31 @@ long userId = 0 ;
 			throw new InvalidTokenException("invalid token");
 		}
 	}
+
+	/**
+	 * provide service to get notes by title
+	 * @param title to find notes
+	 * @return list of notes fetched
+	 */
+	@Override
+	@Transactional
+	public List<NoteEntity> fetchByTitle(String title, String token) {
+		long userId = 0 ;
+		try
+		{
+			userId = jwtUtil.parseToken(token);
+		}catch(Exception e)
+		{
+			throw new InvalidTokenException("invalid token");
+		}
+			User user = userService.findById(userId);
+			if(user!=null)
+			{
+				return noteRepository.getNotesByTitle(title , userId);
+			}else
+					throw new UserNotFoundException("user Not Found");
+	}
+
+
+
 }
