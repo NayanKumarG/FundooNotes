@@ -222,5 +222,19 @@ public class NoteController {
 		noteService.addNoteColor(noteId , color , token);
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("color update for note"));
 	}
+	
+	/**
+	 * Api to get notes by title
+	 * @param title to find notes
+	 * @param token to identify user
+	 * @return list of fetched notes
+	 */
+	@GetMapping("/notes/getNotesByTitle")
+	public ResponseEntity<Response> getNotesByTitle(@RequestParam String title , @RequestHeader String token)
+	{
+		List<NoteEntity> notes = noteService.fetchByTitle(title , token);
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("Notes fetched by title" , notes));
+	}
+
 
 }
