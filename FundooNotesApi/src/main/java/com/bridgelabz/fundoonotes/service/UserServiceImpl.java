@@ -22,7 +22,8 @@ import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
 import com.bridgelabz.fundoonotes.exception.InvalidTokenException;
-import com.bridgelabz.fundoonotes.exception.UserException;
+import com.bridgelabz.fundoonotes.exception.InvalidUserCredentialException;
+import com.bridgelabz.fundoonotes.exception.UserAlreadyExistException;
 import com.bridgelabz.fundoonotes.exception.UserNotFoundException;
 import com.bridgelabz.fundoonotes.response.EmailModel;
 import com.bridgelabz.fundoonotes.utility.EmailUtil;
@@ -81,7 +82,7 @@ public class UserServiceImpl implements UserService {
 		}
 		else
 
-			throw new UserException("User already exist");
+			throw new UserAlreadyExistException("User already exist");
 
 
 	}
@@ -139,7 +140,7 @@ public class UserServiceImpl implements UserService {
 			}
 		
 		else
-			throw new UserException("Invalid credential!!");
+			throw new InvalidUserCredentialException("Invalid credential!!");
 		
 	
 
