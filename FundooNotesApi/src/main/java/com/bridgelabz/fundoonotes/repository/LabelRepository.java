@@ -5,6 +5,8 @@
  */
 package com.bridgelabz.fundoonotes.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -17,5 +19,9 @@ public interface LabelRepository extends JpaRepository<LabelEntity, Long>{
 	@Query("from LabelEntity where user_id=:userId and label_name=:labelName")
 	LabelEntity fetchLabel(long userId , String labelName);
 
-	
+	@Query("from LabelEntity where user_id=:userId")
+	List<LabelEntity> fetchAllLabels(long userId);
+
+	@Query("from LabelEntity where label_name=:name and user_id=:userId ")
+	List<LabelEntity> fetchLabelsByName(long userId , String name);
 }
