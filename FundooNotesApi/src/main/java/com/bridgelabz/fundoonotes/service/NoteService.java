@@ -42,5 +42,9 @@ public interface NoteService {
 
 	boolean addNoteColor(long noteId, String color, String token);
 
+	List<NoteEntity> fetchByTitle(String title, String token);
+
+	
+
 	
 }
