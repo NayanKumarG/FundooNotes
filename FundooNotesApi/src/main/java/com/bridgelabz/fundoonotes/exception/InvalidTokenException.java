@@ -1,5 +1,9 @@
+/**
+ * @author Nayan Kumar G
+ * purpose :To throw invalid token exception
+ * date    :09-03-2020
+ */
 package com.bridgelabz.fundoonotes.exception;
-
 import lombok.Getter;
 
 @Getter
