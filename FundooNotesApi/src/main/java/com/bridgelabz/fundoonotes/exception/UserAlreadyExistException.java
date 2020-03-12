@@ -5,12 +5,19 @@
  */
 package com.bridgelabz.fundoonotes.exception;
 
+
+import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
+@Getter
 public class UserAlreadyExistException extends RuntimeException {
 	
 	private static final long serialVersionUID = 1L;
-
-	public UserAlreadyExistException(String message) {
-		super(message);
+	private String message;
+	private HttpStatus statusCode;
+	public UserAlreadyExistException(String message , HttpStatus statusCode) {
+		this.message = message;
+		this.statusCode= statusCode;
 		
 	}
 }
