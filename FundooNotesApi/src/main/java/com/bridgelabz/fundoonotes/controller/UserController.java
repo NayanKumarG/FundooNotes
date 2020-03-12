@@ -42,12 +42,12 @@ public class UserController {
 	public ResponseEntity<Response> userRegistration(@Valid @RequestBody UserDto userDto)
 	{
 
-		if(userService.addUser(userDto))
+		User user = userService.addUser(userDto);
+		if(user!=null)
+			return ResponseEntity.status(HttpStatus.OK).body(new Response("Registration success" ,userDto));
+		else
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response("Registration not success" ));
 
-			return ResponseEntity.status(HttpStatus.CREATED).body(new Response("Registration success" ,userDto));
-
-
-		return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body(new Response("User already exist with this mail Id"));	
 	}
 
 	/**
@@ -59,11 +59,11 @@ public class UserController {
 	public ResponseEntity<Response> userLogin(@RequestBody UserLoginDto userLoginDto)
 	{
 
-		if(userService.verifyLogin(userLoginDto))
+		userService.verifyLogin(userLoginDto);
 
-			return ResponseEntity.status(HttpStatus.ACCEPTED).body(new Response("Login Success"));
+		return ResponseEntity.status(HttpStatus.ACCEPTED).body(new Response("Login Success"));
 
-		return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(new Response("incorrect mail or password"));
+		
 	}
 	/**
 	 * Api to verify mail
@@ -90,11 +90,10 @@ public class UserController {
 	@PostMapping("/users/forgotPassword")
 	public ResponseEntity<Response> forgotPassword(@RequestParam("email") String email)
 	{
-		if(userService.confirmMail(email))
+		userService.confirmMail(email);
 
-			return ResponseEntity.status(HttpStatus.FOUND).body(new Response("User verified"));
+		return ResponseEntity.status(HttpStatus.FOUND).body(new Response("User verified"));
 
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("User account not present"));
 
 	}
 
