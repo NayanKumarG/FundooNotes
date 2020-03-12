@@ -39,7 +39,7 @@ public class LabelServiceImpl implements LabelService{
 
 	@Autowired
 	private LabelRepository labelRepository;
-	
+
 	@Autowired
 	private NoteRepository noteRepository;
 
@@ -60,7 +60,7 @@ public class LabelServiceImpl implements LabelService{
 			LabelEntity label = labelRepository.fetchLabel(userId, labelDto.getLabelName());
 			if(label==null)
 			{
-				
+
 				BeanUtils.copyProperties(labelDto , labelEntity);
 				labelEntity.setUserId(userId);
 				labelRepository.save(labelEntity);
@@ -86,15 +86,11 @@ public class LabelServiceImpl implements LabelService{
 
 		if(user!=null)
 		{
-			LabelEntity label = labelRepository.findById(labelUpdateDto.getLabelId());
+			LabelEntity label = labelRepository.findById(labelUpdateDto.getLabelId()).orElseThrow(()->new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND));
 
-			if(label!=null)
-			{
-				label.setLabelName(labelUpdateDto.getLabelName());
-				labelRepository.save(label);
-			}
-			else
-				throw new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND);
+			label.setLabelName(labelUpdateDto.getLabelName());
+			labelRepository.save(label);
+
 		}
 		else
 			throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
@@ -114,14 +110,11 @@ public class LabelServiceImpl implements LabelService{
 		if(user!=null)
 		{
 
-			LabelEntity label = labelRepository.findById(labelId);
+			LabelEntity label = labelRepository.findById(labelId).orElseThrow(()->new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND));
 
-			if(label!=null)
-			{
-				labelRepository.delete(label);
-			}			
-			else
-				throw new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND);
+
+			labelRepository.delete(label);
+
 		}
 		else
 			throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
@@ -139,13 +132,13 @@ public class LabelServiceImpl implements LabelService{
 		if(user!=null)
 		{
 			NoteEntity note = noteRepository.fetchById(noteId);
-			LabelEntity label =labelRepository.findById(labelId);
+			LabelEntity label =labelRepository.findById(labelId).orElseThrow(()->new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND));
 			note.getLabels().remove(label);
 			noteRepository.saveOrUpdate(note);
-		
-	}else
-		throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
-}
+
+		}else
+			throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
+	}
 
 	/**
 	 * provide services to add label to the notes
@@ -154,16 +147,16 @@ public class LabelServiceImpl implements LabelService{
 	@Transactional
 	public void addLabel(long labelId, long noteId, String token) {
 		long userId = jwtUtil.parseToken(token);
-		
+
 		User user = userService.findById(userId);
 		if(user!=null)
 		{
-		
-		NoteEntity note = noteRepository.fetchById(noteId);
-		LabelEntity label = labelRepository.findById(labelId);
-		label.getNotes().add(note);
-		labelRepository.save(label);
-		
+
+			NoteEntity note = noteRepository.fetchById(noteId);
+			LabelEntity label = labelRepository.findById(labelId).orElseThrow(()->new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND));
+			label.getNotes().add(note);
+			labelRepository.save(label);
+
 		}
 		else
 			throw new UserNotFoundException("user not exist",HttpStatus.NOT_FOUND);
@@ -177,13 +170,13 @@ public class LabelServiceImpl implements LabelService{
 	@Transactional
 	public List<LabelEntity> getLabels(String token) {
 		long userId = jwtUtil.parseToken(token);
-		
+
 		User user = userService.findById(userId);
 		if(user!=null)
 		{
 			return labelRepository.fetchAllLabels(userId);
-			
-			
+
+
 		}else
 			throw new UserNotFoundException("user not Exist",HttpStatus.NOT_FOUND);
 	}
@@ -195,17 +188,17 @@ public class LabelServiceImpl implements LabelService{
 	@Override
 	@Transactional
 	public List<NoteEntity> getNotesByLabel(long labelId, String token) {
-		
+
 		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
 		if(user!=null)
 		{
-			LabelEntity label = labelRepository.findById(labelId);
-		
-			 return label.getNotes();
-		
-	}else
-		throw new UserNotFoundException("user not Exist",HttpStatus.NOT_FOUND);
+			LabelEntity label = labelRepository.findById(labelId).orElseThrow(()->new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND));
+
+			return label.getNotes();
+
+		}else
+			throw new UserNotFoundException("user not Exist",HttpStatus.NOT_FOUND);
 	}
 }
 
