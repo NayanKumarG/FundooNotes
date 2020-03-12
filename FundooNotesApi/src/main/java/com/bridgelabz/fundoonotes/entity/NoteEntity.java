@@ -57,4 +57,10 @@ public class NoteEntity {
 	@JsonBackReference
 	@JsonIgnore
 	private List<LabelEntity> labels;
+	
+	
+	@ManyToMany(cascade = CascadeType.ALL)
+	@JoinTable(name = "collaborator_note" , joinColumns = { @JoinColumn (name = "note_id")} , inverseJoinColumns = {@JoinColumn(name = "user_id")})
+	@JsonBackReference
+	private List<User> collaborators;
 }
