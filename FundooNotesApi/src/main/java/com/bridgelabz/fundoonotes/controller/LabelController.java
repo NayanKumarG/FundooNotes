@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.bridgelabz.fundoonotes.dto.LabelDto;
 import com.bridgelabz.fundoonotes.dto.LabelUpdateDto;
 import com.bridgelabz.fundoonotes.entity.LabelEntity;
