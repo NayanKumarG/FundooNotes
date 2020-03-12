@@ -7,13 +7,11 @@
 package com.bridgelabz.fundoonotes.service;
 import java.time.LocalDateTime;
 import java.util.List;
-import javax.persistence.EntityManager;
 import javax.transaction.Transactional;
 
-import org.hibernate.Session;
-import org.hibernate.query.Query;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,10 +19,10 @@ import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.User;
-import com.bridgelabz.fundoonotes.exception.InvalidTokenException;
 import com.bridgelabz.fundoonotes.exception.InvalidUserCredentialException;
 import com.bridgelabz.fundoonotes.exception.UserAlreadyExistException;
 import com.bridgelabz.fundoonotes.exception.UserNotFoundException;
+import com.bridgelabz.fundoonotes.repository.UserRepository;
 import com.bridgelabz.fundoonotes.response.EmailModel;
 import com.bridgelabz.fundoonotes.utility.EmailUtil;
 import com.bridgelabz.fundoonotes.utility.JwtUtil;
@@ -44,10 +42,10 @@ public class UserServiceImpl implements UserService {
 	private JwtUtil jwtUtil;
 
 	@Autowired
-	private EntityManager entityManager;
-
-	@Autowired
 	private EmailModel emailModel;
+	
+	@Autowired
+	private UserRepository userRepository;
 
 
 	private User user = new User();
@@ -59,6 +57,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean addUser(UserDto userDto) {
 
+
 		if(!isMailExist(userDto.getEmail()))
 		{
 			BeanUtils.copyProperties(userDto , user);
@@ -66,14 +65,7 @@ public class UserServiceImpl implements UserService {
 			
 			user.setPassword(bcryptPasswordEncoder.encode((userDto.getPassword())));
 			user.setVerified(false);
-			Session session = entityManager.unwrap(Session.class);
-			session.save(user);
-			
-			/*userRepository.save(user);
-			String token = jwtUtil.generateToken(user.getId());
-			log.info("Generated token:"+token);
-			log.info("Decrypted:"+jwtUtil.parseToken(token));*/
-
+			userRepository.save(user);
 			emailModel.setMessage(EmailUtil.createLink("http://localhost:8080/users/verifyMail/", jwtUtil.generateToken(user.getId())));
 			emailModel.setEmail(userDto.getEmail());
 			emailModel.setSubject("Click link to Verify ");
@@ -82,7 +74,7 @@ public class UserServiceImpl implements UserService {
 		}
 		else
 
-			throw new UserAlreadyExistException("User already exist");
+			throw new UserAlreadyExistException("User already exist with given mail:"+userDto.getEmail() , HttpStatus.NOT_FOUND );
 
 
 	}
@@ -94,14 +86,14 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean verifyLogin(UserLoginDto userLoginDto) {
 		String mail = userLoginDto.getEmail();
-		if(findByMail(mail)!=null)
+		if(userRepository.findByMail(mail)!=null)
 		{
-		User user = findByMail(mail);
+		User user = userRepository.findByMail(mail);
 			if(user.isVerified()==true && bcryptPasswordEncoder.matches(userLoginDto.getPassword(), user.getPassword()))
 				return true;
 
 		}
-		throw new UserNotFoundException("user not found");
+		throw new UserNotFoundException("user not found",HttpStatus.NOT_FOUND);
 	}
 
 	/**
@@ -113,34 +105,22 @@ public class UserServiceImpl implements UserService {
 	public boolean updatePassword(UpdatePasswordDto updatePasswordDto, String token) {
 		if(updatePasswordDto.getPassword().equals(updatePasswordDto.getConfirmPassword()))
 		{
-			long userId = 0; 
-			try
-			{
-				userId = jwtUtil.parseToken(token);
-			
-			}catch(Exception e)
-				{
-					throw new InvalidTokenException("Invalid token!!!");	
-				}
+				long userId = jwtUtil.parseToken(token);
 				log.info("my id:"+userId);
-				User user = findById(userId);
+				User user = userRepository.findById(userId);
 				if(user!=null && user.getEmail().equals(updatePasswordDto.getEmail()))
 				{
-					
-					Session session = entityManager.unwrap(Session.class);
-					Query<?> query = session.createQuery("update User set password=:password , update_date_time=:date"+" where user_id =:userId ");
-					query.setParameter("password", bcryptPasswordEncoder.encode(updatePasswordDto.getConfirmPassword()));
-					query.setParameter("userId", userId);
-					query.setParameter("date", LocalDateTime.now());
-					return query.executeUpdate()==1;		
+					String password = bcryptPasswordEncoder.encode(updatePasswordDto.getConfirmPassword());
+					return userRepository.updatePassword(password , userId);
+		
 				}
 				else
-				throw new UserNotFoundException("User Not found!!!");
+				throw new UserNotFoundException("User Not found!!!",HttpStatus.NOT_FOUND);
 				
 			}
 		
 		else
-			throw new InvalidUserCredentialException("Invalid credential!!");
+			throw new InvalidUserCredentialException("Invalid credential!!" , HttpStatus.BAD_REQUEST);
 		
 	
 
@@ -154,37 +134,13 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean isMailExist(String email_id)
 	{
-		Session session = entityManager.unwrap(Session.class);
-		Query<?> query = session.createQuery("from User where email=:email_id");
-		query.setParameter("email_id", email_id);
-		return query.uniqueResult()!=null;
-
-	}
-
-	/**
-	 * 
-	 * @param email_id to find user by email
-	 * @return optional user if found
-	 */
-	@Transactional
-	public User findByMail(String email_id)
-	{
-		Session session = entityManager.unwrap(Session.class);
-		Query<?> query = session.createQuery("from User where email=:email_id");
-		query.setParameter("email_id", email_id);
-		log.info("user"+query.uniqueResult());
-		return (User) query.uniqueResult();
-	}
-
-	@Transactional
-	public User findById(long id)
-	{
-		Session session = entityManager.unwrap(Session.class);
-		Query<?> query = session.createQuery("from User where user_id=:user_id");
-		query.setParameter("user_id", id);
-		return (User) query.uniqueResult();
 		
+		
+		return userRepository.isMailExist(email_id);
+
+
 	}
+
 	/**
 	 * @param emailId to check user is present or not
 	 * @return true if user present
@@ -192,7 +148,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean confirmMail(String emailId) {
 
-		User user = findByMail(emailId);
+		User user = userRepository.findByMail(emailId);
 		if(user!=null)
 		{
 			emailModel.setMessage(EmailUtil.createLink("http://localhost:8080/users/updatePassword/", jwtUtil.generateToken(user.getId())));
@@ -202,7 +158,7 @@ public class UserServiceImpl implements UserService {
 			return true;
 		}
 		
-		throw new UserNotFoundException("user not found");
+		throw new UserNotFoundException("user not found",HttpStatus.NOT_FOUND);
 	}
 	/**
 	 * @param token to find user
@@ -212,16 +168,14 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public boolean updateMailVerification(String token) {
 		long id = jwtUtil.parseToken(token); 
-		if(id!=0)
+		User user = userRepository.findById(id);
+		if(user!=null)
 		{
-			Session session = entityManager.unwrap(Session.class);
-			Query<?> query = session.createQuery("update User set is_verified =:verified "+" where user_id =:u_id");
-			query.setParameter("verified", true);
-			query.setParameter("u_id" , id);
-			query.executeUpdate();
-			return true;
+		
+			return userRepository.updateMailVerification(token, id);
+
 		}
-		return false;
+		throw new UserNotFoundException("user not found",HttpStatus.NOT_FOUND);
 
 	}
 	/**
@@ -230,18 +184,11 @@ public class UserServiceImpl implements UserService {
 	@Transactional
 	@Override
 	public List<User> getUsers() {
-
-		Session session = entityManager.unwrap(Session.class);
-		Query<User> query = session.createQuery("from User" , User.class);
-		List<User> users = query.getResultList();
-		//List<User> users = new ArrayList<>();
-		//userRepository.findAll().forEach(users::add);
+		
+		List<User> users = userRepository.getUsers();
 		users.sort((User user1 , User user2)->user1.getName().compareTo(user2.getName()));
 		return users;
 	}   
-
-
-
 
 	/**
 	 * get the user detail by userId.
@@ -251,13 +198,16 @@ public class UserServiceImpl implements UserService {
 	public User getUser(String token) {
 
 		long userId = jwtUtil.parseToken(token);
-		User user = findById(userId);
+		log.info("My id:"+userId);
+		User user = userRepository.findById(userId);
+		if(user==null)
+		{
 		return user;
+		}
+		else
+		throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
 
 	}
-
-
-
 
 
 
