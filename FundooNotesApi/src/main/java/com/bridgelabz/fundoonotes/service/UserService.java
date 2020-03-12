@@ -13,7 +13,7 @@ import com.bridgelabz.fundoonotes.entity.User;
 
 public interface UserService {
 	
-	boolean addUser(UserDto userDto);
+	User addUser(UserDto userDto);
 	boolean updateMailVerification(String token);
 	boolean verifyLogin(UserLoginDto userLoginDto);
 	boolean isMailExist(String email);
