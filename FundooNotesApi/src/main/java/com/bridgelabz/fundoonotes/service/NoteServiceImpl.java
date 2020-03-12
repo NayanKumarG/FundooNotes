@@ -12,16 +12,17 @@ import javax.transaction.Transactional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import com.bridgelabz.fundoonotes.dto.NoteDto;
 import com.bridgelabz.fundoonotes.dto.NoteReminderDto;
 import com.bridgelabz.fundoonotes.dto.NoteUpdateDto;
 import com.bridgelabz.fundoonotes.entity.NoteEntity;
 import com.bridgelabz.fundoonotes.entity.User;
-import com.bridgelabz.fundoonotes.exception.InvalidTokenException;
 import com.bridgelabz.fundoonotes.exception.NoteNotFoundException;
 import com.bridgelabz.fundoonotes.exception.UserNotFoundException;
 import com.bridgelabz.fundoonotes.repository.NoteRepository;
+import com.bridgelabz.fundoonotes.repository.UserRepository;
 import com.bridgelabz.fundoonotes.utility.JwtUtil;
 
 @Service
@@ -36,7 +37,7 @@ public class NoteServiceImpl implements NoteService{
 	private JwtUtil jwtUtil;
 
 	@Autowired
-	private UserServiceImpl userService;
+	private UserRepository userService;
 
 
 	/**
@@ -47,30 +48,23 @@ public class NoteServiceImpl implements NoteService{
 	@Override
 	public boolean createNote(NoteDto noteDto, String token) {
 
-		long userId = 0 ; 
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+			BeanUtils.copyProperties(noteDto, noteEntity);
+			noteEntity.setCreatedDate(LocalDateTime.now());
+			noteEntity.setArchieved(false);
+			noteEntity.setTrashed(false);
+			noteEntity.setPinned(false);
+			noteEntity.setColor("white");
+			user.getNotes().add(noteEntity);
+			noteRepository.saveOrUpdate(noteEntity);
+			return true;
 		}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				BeanUtils.copyProperties(noteDto, noteEntity);
-				noteEntity.setCreatedDate(LocalDateTime.now());
-				noteEntity.setArchieved(false);
-				noteEntity.setTrashed(false);
-				noteEntity.setPinned(false);
-				noteEntity.setColor("white");
-				user.getNotes().add(noteEntity);
-				noteRepository.saveOrUpdate(noteEntity);
-				return true;
-			}
-			else
+		else
 
-				throw new UserNotFoundException("user not found");
+			throw new UserNotFoundException("user not found",HttpStatus.NOT_FOUND);
 
 	}
 
@@ -81,34 +75,26 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public boolean updateNote(NoteUpdateDto noteUpdateDto, String token) {
-		long userId = 0 ; 
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-			
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
-		}
+		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
-			if(user!=null)
+		if(user!=null)
+		{
+			NoteEntity note = noteRepository.fetchById(noteUpdateDto.getId());
+			if(note!=null)
 			{
-				NoteEntity note = noteRepository.fetchById(noteUpdateDto.getId());
-				if(note!=null)
-				{
-					note.setTitle(noteUpdateDto.getTitle());
-					note.setDescription(noteUpdateDto.getDescription());
-					note.setUpdateDate(LocalDateTime.now());
-					noteRepository.saveOrUpdate(note);
-					return true;
-				}
-				else
-
-					throw  new NoteNotFoundException("Note Not Found");
+				note.setTitle(noteUpdateDto.getTitle());
+				note.setDescription(noteUpdateDto.getDescription());
+				note.setUpdateDate(LocalDateTime.now());
+				noteRepository.saveOrUpdate(note);
+				return true;
 			}
 			else
 
-				throw  new UserNotFoundException("user Not Found");
+				throw  new NoteNotFoundException("Note Not Found" , HttpStatus.NOT_FOUND);
+		}
+		else
+
+			throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 
 
 
@@ -121,26 +107,20 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public boolean deleteNote(long noteId, String token) {
-		long userId = 0 ;
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
-		}
-		
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				NoteEntity note = noteRepository.fetchById(noteId);
-				note.setTrashed(!note.isTrashed());
-				noteRepository.saveOrUpdate(note);
-				return true;
-			}
-			else
 
-				throw  new UserNotFoundException("user Not Found");	
+		long userId = jwtUtil.parseToken(token);
+
+		User user = userService.findById(userId);
+		if(user!=null)
+		{
+			NoteEntity note = noteRepository.fetchById(noteId);
+			note.setTrashed(!note.isTrashed());
+			noteRepository.saveOrUpdate(note);
+			return true;
+		}
+		else
+
+			throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);	
 
 	}
 
@@ -151,31 +131,24 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public boolean deleteNotePermanently(long noteId, String token) {
-		long userId = 0 ;
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
+			NoteEntity note = noteRepository.fetchById(noteId);
+			if(note!=null)
 			{
-				throw new InvalidTokenException("invalid token");
-			}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				NoteEntity note = noteRepository.fetchById(noteId);
-				if(note!=null)
-				{
-					noteRepository.deleteNote(noteId);
-					return true;
+				noteRepository.deleteNote(noteId);
+				return true;
 
-				}
-				else
-					throw  new NoteNotFoundException("Note Not Found");
 			}
 			else
-				throw  new UserNotFoundException("user Not Found");	
+				throw  new NoteNotFoundException("Note Not Found" , HttpStatus.NOT_FOUND);
 		}
-	
+		else
+			throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);	
+	}
+
 
 	/**
 	 *provides service to pin note
@@ -184,27 +157,20 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public boolean pinOrUnpinNote(long noteId, String token) {
-		long userId = 0 ; 
-		try
+
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+			NoteEntity note = noteRepository.fetchById(noteId);
+			note.setPinned(!note.isPinned());
+			noteRepository.saveOrUpdate(note);
+			return true;
 		}
-			
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				NoteEntity note = noteRepository.fetchById(noteId);
-				note.setPinned(!note.isPinned());
-				noteRepository.saveOrUpdate(note);
-				return true;
-			}
 
-			else
+		else
 
-				throw  new UserNotFoundException("user Not Found");	
+			throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);	
 
 
 	}
@@ -216,27 +182,19 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public boolean archieveNote(long noteId, String token) {
-		long userId = 0 ; 
-		try
-		{
-			userId = jwtUtil.parseToken(token);
 
-		}catch(Exception e)
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			throw new InvalidTokenException("invalid token");
+			NoteEntity note = noteRepository.fetchById(noteId);
+			note.setArchieved(!note.isArchieved());
+			noteRepository.saveOrUpdate(note);
+			return true;
 		}
-		
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				NoteEntity note = noteRepository.fetchById(noteId);
-				note.setArchieved(!note.isArchieved());
-				noteRepository.saveOrUpdate(note);
-				return true;
-			}
-			else
+		else
 
-				throw  new UserNotFoundException("user Not Found");
+			throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 
 	}
 
@@ -258,24 +216,17 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public List<NoteEntity> fetchAllNotes(String token) {
-		long userId = 0 ;
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+			List<NoteEntity> notes = noteRepository.getNotes(userId);
+			notes.sort((NoteEntity note1 , NoteEntity note2)->note1.getTitle().compareTo(note2.getTitle()));            
+			return notes;
+
 		}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				List<NoteEntity> notes = noteRepository.getNotes(userId);
-				notes.sort((NoteEntity note1 , NoteEntity note2)->note1.getTitle().compareTo(note2.getTitle()));            
-				return notes;
 
-			}
-
-			throw  new UserNotFoundException("user Not Found");
+		throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 
 
 	}
@@ -286,27 +237,20 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public List<NoteEntity> fetchTrashedNote(String token) {
-		long userId = 0 ;
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+
+
+			List<NoteEntity> notes = noteRepository.getTrashedNotes(userId);
+			notes.stream().filter(note->note.isTrashed()==true).collect(Collectors.toList());
+			return notes;
+
+			//return noteRepository.getTrashedNotes(userId);
+
 		}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				
-
-				List<NoteEntity> notes = noteRepository.getTrashedNotes(userId);
-				notes.stream().filter(note->note.isTrashed()==true).collect(Collectors.toList());
-				return notes;
-				
-				//return noteRepository.getTrashedNotes(userId);
-
-			}
-			throw  new UserNotFoundException("user Not Found");
+		throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 
 
 	}
@@ -317,22 +261,15 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public List<NoteEntity> fetchArchievedNotes(String token) {
-		long userId = 0 ;
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+			return noteRepository.getArchievedNotes(userId);
+
 		}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				return noteRepository.getArchievedNotes(userId);
 
-			}
-
-			throw  new UserNotFoundException("user Not Found");
+		throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 
 
 	}
@@ -343,23 +280,15 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public List<NoteEntity> fetchPinnedNotes(String token) {
-		long userId = 0;
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-			
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+			return noteRepository.getpinnedNotes(userId);
+
 		}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				return noteRepository.getpinnedNotes(userId);
 
-			}
-
-			throw  new UserNotFoundException("user Not Found");
+		throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 
 
 	}
@@ -372,27 +301,20 @@ public class NoteServiceImpl implements NoteService{
 	 */
 	@Override
 	public boolean addReminder(NoteReminderDto noteReminderDto , String token, long noteId) {
-long userId = 0 ;
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+			LocalDateTime reminderDate = noteReminderDto.getReminder();
+			NoteEntity noteEntity = noteRepository.fetchById(noteId);
+			noteEntity.setReminder(reminderDate);
+			noteRepository.saveOrUpdate(noteEntity);
+			return true;
 		}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				LocalDateTime reminderDate = noteReminderDto.getReminder();
-				NoteEntity noteEntity = noteRepository.fetchById(noteId);
-				noteEntity.setReminder(reminderDate);
-				noteRepository.saveOrUpdate(noteEntity);
-				return true;
-			}
 
-			else
+		else
 
-				throw  new UserNotFoundException("user Not Found");
+			throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 
 
 	}
@@ -404,26 +326,19 @@ long userId = 0 ;
 	 */
 	@Override
 	public boolean deleteNoteReminder(String token, long noteId) {
-		long userId = 0 ;
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+			NoteEntity noteEntity = noteRepository.fetchById(noteId);
+			noteEntity.setReminder(null);
+			noteRepository.saveOrUpdate(noteEntity);
+			return true;
 		}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				NoteEntity noteEntity = noteRepository.fetchById(noteId);
-				noteEntity.setReminder(null);
-				noteRepository.saveOrUpdate(noteEntity);
-				return true;
-			}
 
-			else
+		else
 
-				throw  new UserNotFoundException("user Not Found");
+			throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 
 
 	}
@@ -435,8 +350,7 @@ long userId = 0 ;
 	 */
 	@Override
 	public boolean addNoteColor(long noteId, String color, String token) {
-		try
-		{
+		
 			User user = userService.findById(jwtUtil.parseToken(token));
 			if(user!=null)
 			{
@@ -447,12 +361,9 @@ long userId = 0 ;
 
 			}
 			else
-				throw  new UserNotFoundException("user Not Found");
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
+				throw  new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 		}
-	}
+	
 
 	/**
 	 * provide service to get notes by title
@@ -462,20 +373,13 @@ long userId = 0 ;
 	@Override
 	@Transactional
 	public List<NoteEntity> fetchByTitle(String title, String token) {
-		long userId = 0 ;
-		try
+		long userId = jwtUtil.parseToken(token);
+		User user = userService.findById(userId);
+		if(user!=null)
 		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
-		}
-			User user = userService.findById(userId);
-			if(user!=null)
-			{
-				return noteRepository.getNotesByTitle(title , userId);
-			}else
-					throw new UserNotFoundException("user Not Found");
+			return noteRepository.getNotesByTitle(title , userId);
+		}else
+			throw new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 	}
 
 
