@@ -14,7 +14,7 @@ import com.bridgelabz.fundoonotes.entity.LabelEntity;
 
 public interface LabelRepository extends JpaRepository<LabelEntity, Long>{
 
-	LabelEntity findById(long labelId);
+	//LabelEntity findById(long labelId);
 	
 	@Query("from LabelEntity where user_id=:userId and label_name=:labelName")
 	LabelEntity fetchLabel(long userId , String labelName);
