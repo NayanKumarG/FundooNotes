@@ -10,6 +10,7 @@ import javax.transaction.Transactional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.bridgelabz.fundoonotes.dto.LabelDto;
@@ -17,12 +18,12 @@ import com.bridgelabz.fundoonotes.dto.LabelUpdateDto;
 import com.bridgelabz.fundoonotes.entity.LabelEntity;
 import com.bridgelabz.fundoonotes.entity.NoteEntity;
 import com.bridgelabz.fundoonotes.entity.User;
-import com.bridgelabz.fundoonotes.exception.InvalidTokenException;
 import com.bridgelabz.fundoonotes.exception.LabelAlreadyExistException;
 import com.bridgelabz.fundoonotes.exception.LabelNotFoundException;
 import com.bridgelabz.fundoonotes.exception.UserNotFoundException;
 import com.bridgelabz.fundoonotes.repository.LabelRepository;
 import com.bridgelabz.fundoonotes.repository.NoteRepository;
+import com.bridgelabz.fundoonotes.repository.UserRepository;
 import com.bridgelabz.fundoonotes.utility.JwtUtil;
 
 @Service
@@ -34,7 +35,7 @@ public class LabelServiceImpl implements LabelService{
 	private JwtUtil jwtUtil ; 
 
 	@Autowired
-	private UserServiceImpl userService;
+	private UserRepository userService;
 
 	@Autowired
 	private LabelRepository labelRepository;
@@ -50,14 +51,7 @@ public class LabelServiceImpl implements LabelService{
 	@Override
 	@Transactional
 	public void createLabel(LabelDto labelDto, String token) {
-		long userId = 0;
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
-		}
+		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
 
 		if(user!=null)
@@ -66,15 +60,16 @@ public class LabelServiceImpl implements LabelService{
 			LabelEntity label = labelRepository.fetchLabel(userId, labelDto.getLabelName());
 			if(label==null)
 			{
+				
 				BeanUtils.copyProperties(labelDto , labelEntity);
 				labelEntity.setUserId(userId);
 				labelRepository.save(labelEntity);
 			}
 			else
-				throw new LabelAlreadyExistException("label already present!!");
+				throw new LabelAlreadyExistException("label already present!!" , HttpStatus.FOUND);
 		}
 		else
-			throw new UserNotFoundException("user not found!!");
+			throw new UserNotFoundException("user not found!!",HttpStatus.NOT_FOUND);
 
 
 	}
@@ -86,14 +81,7 @@ public class LabelServiceImpl implements LabelService{
 	@Override
 	@Transactional
 	public void updateLabel(LabelUpdateDto labelUpdateDto, String token) {
-		long userId = 0 ;
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
-		}
+		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
 
 		if(user!=null)
@@ -106,10 +94,10 @@ public class LabelServiceImpl implements LabelService{
 				labelRepository.save(label);
 			}
 			else
-				throw new LabelNotFoundException("label not found");
+				throw new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND);
 		}
 		else
-			throw new UserNotFoundException("user Not found");
+			throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
 	}
 
 	/**
@@ -120,15 +108,7 @@ public class LabelServiceImpl implements LabelService{
 	@Override
 	@Transactional
 	public void deleteLabel(long labelId, String token) {
-
-		long userId = 0 ;
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
-		}
+		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
 
 		if(user!=null)
@@ -141,10 +121,10 @@ public class LabelServiceImpl implements LabelService{
 				labelRepository.delete(label);
 			}			
 			else
-				throw new LabelNotFoundException("label not found");
+				throw new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND);
 		}
 		else
-			throw new UserNotFoundException("user Not found");
+			throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
 	}
 
 	/**
@@ -153,14 +133,7 @@ public class LabelServiceImpl implements LabelService{
 	@Override
 	@Transactional
 	public void removeLabel(long labelId, long noteId, String token) {
-		long userId = 0 ;
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("invalid token");
-		}
+		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
 
 		if(user!=null)
@@ -171,7 +144,7 @@ public class LabelServiceImpl implements LabelService{
 			noteRepository.saveOrUpdate(note);
 		
 	}else
-		throw new UserNotFoundException("user Not found");
+		throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
 }
 
 	/**
@@ -180,14 +153,7 @@ public class LabelServiceImpl implements LabelService{
 	@Override
 	@Transactional
 	public void addLabel(long labelId, long noteId, String token) {
-		long userId = 0;
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("token is not valid");
-		}
+		long userId = jwtUtil.parseToken(token);
 		
 		User user = userService.findById(userId);
 		if(user!=null)
@@ -200,7 +166,7 @@ public class LabelServiceImpl implements LabelService{
 		
 		}
 		else
-			throw new UserNotFoundException("user not exist");
+			throw new UserNotFoundException("user not exist",HttpStatus.NOT_FOUND);
 	}
 
 	/**
@@ -210,14 +176,7 @@ public class LabelServiceImpl implements LabelService{
 	@Override
 	@Transactional
 	public List<LabelEntity> getLabels(String token) {
-		long userId = 0 ;
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("token invalid");
-		}
+		long userId = jwtUtil.parseToken(token);
 		
 		User user = userService.findById(userId);
 		if(user!=null)
@@ -226,7 +185,7 @@ public class LabelServiceImpl implements LabelService{
 			
 			
 		}else
-			throw new UserNotFoundException("user not Exist");
+			throw new UserNotFoundException("user not Exist",HttpStatus.NOT_FOUND);
 	}
 
 	/**
@@ -236,15 +195,8 @@ public class LabelServiceImpl implements LabelService{
 	@Override
 	@Transactional
 	public List<NoteEntity> getNotesByLabel(long labelId, String token) {
-		long userId = 0 ;
-		try
-		{
-			userId = jwtUtil.parseToken(token);
-		}catch(Exception e)
-		{
-			throw new InvalidTokenException("token invalid");
-		}
 		
+		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
 		if(user!=null)
 		{
@@ -253,7 +205,7 @@ public class LabelServiceImpl implements LabelService{
 			 return label.getNotes();
 		
 	}else
-		throw new UserNotFoundException("user not Exist");
+		throw new UserNotFoundException("user not Exist",HttpStatus.NOT_FOUND);
 	}
 }
 
