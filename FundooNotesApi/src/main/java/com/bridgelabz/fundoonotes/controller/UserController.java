@@ -5,6 +5,9 @@
  */
 package com.bridgelabz.fundoonotes.controller;
 import java.util.List;
+
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +39,7 @@ public class UserController {
 	 * @return response for user registration
 	 */
 	@PostMapping("/users/register")
-	public ResponseEntity<Response> userRegistration(@RequestBody UserDto userDto)
+	public ResponseEntity<Response> userRegistration(@Valid @RequestBody UserDto userDto)
 	{
 
 		if(userService.addUser(userDto))
@@ -138,11 +141,7 @@ public class UserController {
 	public ResponseEntity<Response> getUsers()
 	{
 		List<User> user = userService.getUsers();
-		
-		
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("users found" , user));
 	}
-
-
 }
 
