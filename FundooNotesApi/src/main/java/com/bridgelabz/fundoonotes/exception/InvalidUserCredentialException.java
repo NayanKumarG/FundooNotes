@@ -5,16 +5,19 @@
  */
 package com.bridgelabz.fundoonotes.exception;
 
+import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
+@Getter
 public class InvalidUserCredentialException extends RuntimeException{
 
 
 	private static final long serialVersionUID = 1L;
-
-	public InvalidUserCredentialException(String message) {
-		super(message);
-		// TODO Auto-generated constructor stub
+	private String message;
+	private HttpStatus statusCode;
+	public InvalidUserCredentialException(String message, HttpStatus statusCode) {
+		super();
+		this.message = message;
+		this.statusCode = statusCode;
 	}
-	
-	
-
 }
