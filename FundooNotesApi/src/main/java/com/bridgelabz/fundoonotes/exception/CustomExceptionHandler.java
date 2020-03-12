@@ -1,7 +1,9 @@
+/**
+ * @author Nayan Kumar G
+ * purpose :Custom exception handler file
+ * date    :11-03-2020
+ */
 package com.bridgelabz.fundoonotes.exception;
-
-
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -76,4 +78,12 @@ public class CustomExceptionHandler extends ResponseEntityExceptionHandler{
     
 	}
 	
+	@ExceptionHandler(MailNotFoundException.class)
+    public final ResponseEntity<ErrorResponse> handleMailNotFoundException(MailNotFoundException mailException) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setMessage(mailException.getMessage());
+        errorResponse.setStatusCode(mailException.getStatusCode());
+        return ResponseEntity.status(HttpStatus.ALREADY_REPORTED).body(new ErrorResponse(errorResponse.getMessage(), errorResponse.getStatusCode()));
+    
+	}
 }
