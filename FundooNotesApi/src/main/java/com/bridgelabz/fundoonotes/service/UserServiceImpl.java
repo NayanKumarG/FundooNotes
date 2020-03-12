@@ -55,7 +55,7 @@ public class UserServiceImpl implements UserService {
 	 */
 	@Transactional
 	@Override
-	public boolean addUser(UserDto userDto) {
+	public User addUser(UserDto userDto) {
 
 
 		if(!isMailExist(userDto.getEmail()))
@@ -70,7 +70,7 @@ public class UserServiceImpl implements UserService {
 			emailModel.setEmail(userDto.getEmail());
 			emailModel.setSubject("Click link to Verify ");
 			EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
-			return true;
+			return user;
 		}
 		else
 
