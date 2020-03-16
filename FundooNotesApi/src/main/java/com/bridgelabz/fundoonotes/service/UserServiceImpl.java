@@ -7,21 +7,29 @@
 package com.bridgelabz.fundoonotes.service;
 import java.time.LocalDateTime;
 import java.util.List;
+
 import javax.transaction.Transactional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.bridgelabz.fundoonotes.configuration.RabbitMQPublisher;
 import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
+import com.bridgelabz.fundoonotes.entity.NoteEntity;
 import com.bridgelabz.fundoonotes.entity.User;
 import com.bridgelabz.fundoonotes.exception.InvalidUserCredentialException;
+import com.bridgelabz.fundoonotes.exception.MailNotFoundException;
 import com.bridgelabz.fundoonotes.exception.UserAlreadyExistException;
 import com.bridgelabz.fundoonotes.exception.UserNotFoundException;
+import com.bridgelabz.fundoonotes.repository.NoteRepository;
+import com.bridgelabz.fundoonotes.repository.RedisRepository;
 import com.bridgelabz.fundoonotes.repository.UserRepository;
 import com.bridgelabz.fundoonotes.response.EmailModel;
 import com.bridgelabz.fundoonotes.utility.EmailUtil;
@@ -47,7 +55,15 @@ public class UserServiceImpl implements UserService {
 	@Autowired
 	private UserRepository userRepository;
 
-
+	@Autowired
+	private RedisRepository redisRepository;
+	
+	@Autowired
+	private RabbitMQPublisher rabbitMQSender;
+	
+	@Autowired
+	private NoteRepository noteRepository;
+	
 	private User user = new User();
 
 	/**
@@ -66,10 +82,12 @@ public class UserServiceImpl implements UserService {
 			user.setPassword(bcryptPasswordEncoder.encode((userDto.getPassword())));
 			user.setVerified(false);
 			userRepository.save(user);
+			//redisRepository.save(user);
 			emailModel.setMessage(EmailUtil.createLink("http://localhost:8080/users/verifyMail/", jwtUtil.generateToken(user.getId())));
 			emailModel.setEmail(userDto.getEmail());
 			emailModel.setSubject("Click link to Verify ");
 			EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
+			//rabbitMQSender.send(emailModel);
 			return user;
 		}
 		else
@@ -195,20 +213,115 @@ public class UserServiceImpl implements UserService {
 	 */
 	@Transactional
 	@Override
+	//@Cacheable(value = "user" , key = "#token")
 	public User getUser(String token) {
 
 		long userId = jwtUtil.parseToken(token);
 		log.info("My id:"+userId);
-		User user = userRepository.findById(userId);
-		if(user==null)
+
+		User user = userRepository.findById(userId);//redisRepository.findById(userId);
+
+		if(user!=null)
 		{
 		return user;
 		}
 		else
 		throw new UserNotFoundException("user Not found",HttpStatus.NOT_FOUND);
+	}
+	
+	/**
+	 * provide service to add collaborator
+	 */
+	@Override
+	@Transactional
+	public NoteEntity addCollaborator(long noteId, String email, String token) {
+
+		long userId = jwtUtil.parseToken(token);
+
+		User user = userRepository.findById(userId);
+		if(user!=null)
+		{
+
+			User collaborator = userRepository.findByMail(email);
+			if(collaborator!=null)
+			{
+
+				NoteEntity note = noteRepository.fetchById(noteId);
+
+				if(note.getCollaborators().contains(collaborator)!=true)
+				{
+					collaborator.getCollaboratorNotes().add(note);
+					emailModel.setMessage("Inviting to fundoo note");
+					emailModel.setEmail(email);
+					emailModel.setSubject("Click note to open ");
+					EmailUtil.sendAttachmentEmail(emailModel.getEmail(), emailModel.getSubject(), emailModel.getMessage());
+					return note;
+				}
+				else
+
+					throw new UserAlreadyExistException("User already collaborated", HttpStatus.ALREADY_REPORTED);
+			}
+			else
+				throw new MailNotFoundException("User not found with mail:"+email, HttpStatus.NOT_FOUND);
+
+		}
+		else
+			throw new UserNotFoundException("user Not Found", HttpStatus.NOT_FOUND);
 
 	}
 
+	/**
+	 * provide service to delete collaborator
+	 */
+	@Override
+	@Transactional
+	public NoteEntity deleteCollaborator(long noteId, String email, String token) {
+
+		long userId = jwtUtil.parseToken(token);
+
+		User user = userRepository.findById(userId);
+
+		if(user!=null)
+		{
+			User collaborator = userRepository.findByMail(email);
+			if(collaborator!=null)
+			{
+				NoteEntity note = noteRepository.fetchById(noteId);
+				note.getCollaborators().remove(collaborator);
+				return note;
+			}
+			else
+				throw new MailNotFoundException("user not found with mail:"+email, HttpStatus.NOT_FOUND);
+
+		}
+		else
+
+			throw new UserNotFoundException("user not found", HttpStatus.NOT_FOUND);
+
+	}
+
+	/**
+	 * provide service to get collaborated notes
+	 */
+	@Override
+	@Transactional
+	public List<NoteEntity> getCollaboratorNotes(String token) {
+
+		long userId = jwtUtil.parseToken(token);
+
+		User user = userRepository.findById(userId);
+
+		if(user!=null)
+		{
+
+			List<NoteEntity> collaboratorNotes =user.getCollaboratorNotes();
+			log.info("notes:"+collaboratorNotes);
+			return collaboratorNotes;
+		}
+		else
+			throw new UserNotFoundException("user not found", HttpStatus.NOT_FOUND);
+
+	}
 
 
 }
