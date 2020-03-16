@@ -11,19 +11,25 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
+import com.bridgelabz.fundoonotes.entity.NoteEntity;
 import com.bridgelabz.fundoonotes.entity.User;
 import com.bridgelabz.fundoonotes.response.Response;
 import com.bridgelabz.fundoonotes.service.UserService;
+
+import org.springframework.cache.annotation.Cacheable;
 
 @RestController
 public class UserController {
@@ -31,8 +37,7 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 
-
-
+	
 	/**
 	 * Api for user registration
 	 * @param userDto creates object request by user
@@ -121,12 +126,16 @@ public class UserController {
 	 * @param userId given by the user to get the detail
 	 * @return returns user object
 	 */
+	//@Cacheable(value = "user" , key = "#token")
 	@GetMapping("/users/getUser/{token}")
 	public ResponseEntity<Response> getUser(@PathVariable String token)
 	{
+
 		User user = userService.getUser(token);
+
+
 		if(user!=null)
-			
+
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("User found" , user));
 		
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Response("User Not found"));
@@ -141,6 +150,48 @@ public class UserController {
 	{
 		List<User> user = userService.getUsers();
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("users found" , user));
+	}
+	
+	/**
+	 * Api to add collaborator to note
+	 * @param noteId to get note
+	 * @param email to collaborate
+	 * @param token to identify user
+	 * 
+	 */
+	@PostMapping("/users/addCollaborator")
+	public ResponseEntity<Response> addCollaborator(@RequestParam long noteId , @RequestParam String email , @RequestHeader String token)
+	{
+		NoteEntity collaboratedNote = userService.addCollaborator(noteId , email , token);
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("Collaborator added" , collaboratedNote));
+	}
+
+	/**
+	 * Api to delete collaborator
+	 * @param noteId to get note
+	 * @param email to identify collaborator
+	 * @param token to identify user
+	 * 
+	 */
+	@DeleteMapping("/users/deleteCollaborator")
+	public ResponseEntity<Response> deleteCollaborator(@RequestParam long noteId , @RequestParam String email , @RequestHeader String token)
+	{
+		NoteEntity collaboratedNote = userService.deleteCollaborator(noteId , email , token);
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("Collaborator deleted" , collaboratedNote));
+	}
+	
+	/**
+	 * Api to get collaborater notes
+	 * @param token to identify user
+	 * 
+	 */
+	@GetMapping("/users/getCollaboratorNotes")
+	public ResponseEntity<Response> getCollaboratorNotes(@RequestHeader String token)
+	{
+		List<NoteEntity> collaboratorNotes = userService.getCollaboratorNotes(token);
+		
+		return ResponseEntity.status(HttpStatus.OK).body(new Response("collaborator notes fetched" , collaboratorNotes));
+		
 	}
 }
 
