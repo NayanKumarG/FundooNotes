@@ -38,6 +38,11 @@ public class NoteServiceImpl implements NoteService{
 
 	@Autowired
 	private UserRepository userService;
+	
+	@Autowired
+	private ElasticSearchServiceImpl elasticService;
+	
+	
 
 
 	/**
@@ -60,12 +65,20 @@ public class NoteServiceImpl implements NoteService{
 			noteEntity.setColor("white");
 			user.getNotes().add(noteEntity);
 			noteRepository.saveOrUpdate(noteEntity);
+			if(noteEntity!=null)
+			{
+				try {	
+					NoteEntity note = elasticService.createNote(noteEntity);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 			return true;
 		}
 		else
 
 			throw new UserNotFoundException("user not found",HttpStatus.NOT_FOUND);
-
 	}
 
 	/**
@@ -86,6 +99,11 @@ public class NoteServiceImpl implements NoteService{
 				note.setDescription(noteUpdateDto.getDescription());
 				note.setUpdateDate(LocalDateTime.now());
 				noteRepository.saveOrUpdate(note);
+				
+				if(note!=null)
+				{
+					elasticService.updateNote(note);
+				}
 				return true;
 			}
 			else
@@ -381,7 +399,16 @@ public class NoteServiceImpl implements NoteService{
 		}else
 			throw new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
 	}
-
-
-
+	
+//	List<NoteEntity> notes=elasticService.searchByTitle(title);
+//	if(notes!=null) {
+//	
+//		return notes;
+//	}
+//	else {
+//		throw  new NoteNotFoundException("Note Not Found" , HttpStatus.NOT_FOUND);
+//	}
+//
+//	
+//	}
 }
