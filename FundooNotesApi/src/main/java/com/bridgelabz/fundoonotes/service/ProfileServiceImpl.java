@@ -15,9 +15,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
 import com.bridgelabz.fundoonotes.entity.ProfileEntity;
 import com.bridgelabz.fundoonotes.entity.User;
+import com.bridgelabz.fundoonotes.exception.UploadFileFailureException;
 import com.bridgelabz.fundoonotes.exception.UserNotFoundException;
 import com.bridgelabz.fundoonotes.repository.ProfileRepository;
 import com.bridgelabz.fundoonotes.repository.UserRepository;
@@ -47,14 +50,23 @@ public class ProfileServiceImpl implements ProfileService{
 	@Override
 	public ProfileEntity uploadFileToS3(MultipartFile file, String token) {
 		
-		//long userId = jwtUtil.parseToken(token);
-		User user = userRepository.findById(3);
+		long userId = jwtUtil.parseToken(token);
+		User user = userRepository.findById(userId);
 		if(user!=null)
 		{
 			ProfileEntity profile = new ProfileEntity(file.getOriginalFilename() , user);
 			profileRepository.save(profile);
-           // saveOrUpdate(file , profile);
-            return profile;
+			ObjectMetadata objectMetaData = new ObjectMetadata();
+			objectMetaData.setContentType(file.getContentType());
+			objectMetaData.setContentLength(file.getSize());
+			try {
+				amazonS3.putObject(bucketName , file.getOriginalFilename() , file.getInputStream() , objectMetaData);
+			} catch (Exception e) {
+				
+				throw new UploadFileFailureException("File uploading failed", HttpStatus.NOT_ACCEPTABLE);
+			}
+			profileRepository.save(profile);
+			return profile;
 		}
 		
 		else
@@ -66,16 +78,15 @@ public class ProfileServiceImpl implements ProfileService{
 	 * service to update file
 	 */
 	@Override
-	public ProfileEntity updateFileInS3(MultipartFile file, String token) 
+	public ProfileEntity updateFileInS3(String token) 
 	{
-		long userId = 3;//jwtUtil.parseToken(token);
+		long userId = jwtUtil.parseToken(token);
 		User user = userRepository.findById(userId);
 		ProfileEntity profile = profileRepository.findByUserId(userId);
 		if(user!=null)
 		{
 		amazonS3.deleteObject(bucketName , profile.getProfileName());	
-		//profileRepository.delete(profile);
-		//saveOrUpdate(file , profile);
+		profileRepository.delete(profile);
 		return profile;
 			
 	    }else
@@ -84,21 +95,28 @@ public class ProfileServiceImpl implements ProfileService{
 		
 		}
 	
-	public ProfileEntity saveOrUpdate(MultipartFile file ,ProfileEntity profile)
-	{
-		ObjectMetadata objectMetaData = new ObjectMetadata();
-		objectMetaData.setContentType(file.getContentType());
-		objectMetaData.setContentLength(file.getSize());
-		try {
-			System.out.println("in ");
-		
-			amazonS3.putObject(bucketName , file.getOriginalFilename() , file.getInputStream() , objectMetaData);
-		} catch (SdkClientException | IOException e) {
-			
-			e.printStackTrace();
+	
+	/**
+	 * Service to get file from aws
+	 */
+	@Override
+	public S3Object getProfilePic(String token) {
+		long userId = jwtUtil.parseToken(token);
+		User user = userRepository.findById(userId);
+		if(user!=null)
+		{
+			ProfileEntity profile = profileRepository.findByUserId(userId);
+		if(profile!=null)
+		{
+			S3Object s3Object = amazonS3.getObject(new GetObjectRequest(bucketName , profile.getProfileName()));
+			return s3Object;	
 		}
-		profileRepository.save(profile);
-		return profile;
+		return null;
+	
+		}
+		else
+		throw new UserNotFoundException("user not exist", HttpStatus.NOT_FOUND);
+		
 	}
 	
 }
