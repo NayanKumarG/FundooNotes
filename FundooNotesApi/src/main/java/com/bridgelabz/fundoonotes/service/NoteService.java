@@ -24,7 +24,7 @@ public interface NoteService {
 
 	boolean archieveNote(long noteId, String token);
 
-	boolean updateNote(NoteUpdateDto noteUpdateDto, String token);
+	boolean updateNote(long noteId, NoteUpdateDto noteUpdateDto, String token);
 
 	List<NoteEntity> fetchAllNotes(String token);
 
