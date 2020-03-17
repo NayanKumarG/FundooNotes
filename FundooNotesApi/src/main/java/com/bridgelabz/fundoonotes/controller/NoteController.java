@@ -106,10 +106,10 @@ public class NoteController {
 	 * @param token to get user id
 	 * 
 	 */
-	@PutMapping("/notes/update")
-	public ResponseEntity<Response> updateNote(@RequestBody NoteUpdateDto noteUpdateDto , @RequestHeader String token)
+	@PutMapping("/notes/update/{noteId}")
+	public ResponseEntity<Response> updateNote(@PathVariable long noteId , @RequestBody NoteUpdateDto noteUpdateDto , @RequestHeader String token)
 	{
-		noteService.updateNote(noteUpdateDto , token);
+		noteService.updateNote(noteId , noteUpdateDto , token);
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("update success"));
 	}
 
