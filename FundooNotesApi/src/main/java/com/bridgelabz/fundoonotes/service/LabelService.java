@@ -14,7 +14,7 @@ public interface LabelService {
 
 	void createLabel(LabelDto labelDto, String token);
 
-	void updateLabel(LabelUpdateDto labelUpdateDto, String token);
+	void updateLabel(long labelId, LabelUpdateDto labelUpdateDto, String token);
 
 	void deleteLabel(long labelId, String token);
 
