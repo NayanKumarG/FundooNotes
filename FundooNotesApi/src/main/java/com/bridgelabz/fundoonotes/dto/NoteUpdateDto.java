@@ -8,8 +8,6 @@ import lombok.Data;
 
 @Data
 public class NoteUpdateDto {
-
-	private long id;
 	
 	private String title;
 	
