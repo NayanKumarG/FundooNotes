@@ -13,6 +13,7 @@ public interface ElasticSearchService {
 
 	NoteEntity createNote(NoteEntity note);
 	NoteEntity updateNote(NoteEntity note);
+	boolean deleteNote(NoteEntity note);
 	List<NoteEntity> searchByTitle(String title);
 
 }
