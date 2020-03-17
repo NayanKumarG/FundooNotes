@@ -70,4 +70,6 @@ public class EmailUtil {
 	{
 		return url+""+token;
 	}
+	
+
 }
