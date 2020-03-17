@@ -68,7 +68,7 @@ public class NoteServiceImpl implements NoteService{
 			if(noteEntity!=null)
 			{
 				try {	
-					NoteEntity note = elasticService.createNote(noteEntity);
+					elasticService.createNote(noteEntity);
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -87,12 +87,12 @@ public class NoteServiceImpl implements NoteService{
 	 * 
 	 */
 	@Override
-	public boolean updateNote(NoteUpdateDto noteUpdateDto, String token) {
+	public boolean updateNote(long noteId , NoteUpdateDto noteUpdateDto, String token) {
 		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
 		if(user!=null)
 		{
-			NoteEntity note = noteRepository.fetchById(noteUpdateDto.getId());
+			NoteEntity note = noteRepository.fetchById(noteId);
 			if(note!=null)
 			{
 				note.setTitle(noteUpdateDto.getTitle());
@@ -157,6 +157,7 @@ public class NoteServiceImpl implements NoteService{
 			if(note!=null)
 			{
 				noteRepository.deleteNote(noteId);
+				elasticService.deleteNote(note);
 				return true;
 
 			}
@@ -391,24 +392,28 @@ public class NoteServiceImpl implements NoteService{
 	@Override
 	@Transactional
 	public List<NoteEntity> fetchByTitle(String title, String token) {
-		long userId = jwtUtil.parseToken(token);
-		User user = userService.findById(userId);
-		if(user!=null)
-		{
-			return noteRepository.getNotesByTitle(title , userId);
-		}else
-			throw new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
-	}
+//		long userId = jwtUtil.parseToken(token);
+//		User user = userService.findById(userId);
+//		if(user!=null)
+//		{
+//			return noteRepository.getNotesByTitle(title , userId);
+//		}else
+//			throw new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
+//	}
+	long userId = jwtUtil.parseToken(token);
+	User user = userService.findById(userId);
+	if(user!=null)
+	{
+	List<NoteEntity> notes=elasticService.searchByTitle(title);
+	if(notes!=null) {
 	
-//	List<NoteEntity> notes=elasticService.searchByTitle(title);
-//	if(notes!=null) {
-//	
-//		return notes;
-//	}
-//	else {
-//		throw  new NoteNotFoundException("Note Not Found" , HttpStatus.NOT_FOUND);
-//	}
-//
-//	
-//	}
+		return notes;
+	}
+	else 
+		throw  new NoteNotFoundException("Note Not Found" , HttpStatus.NOT_FOUND);
+	
+	}
+	else
+		throw new UserNotFoundException("user Not Found",HttpStatus.NOT_FOUND);
+}
 }
