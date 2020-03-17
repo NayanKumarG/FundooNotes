@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -20,10 +22,12 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.bridgelabz.fundoonotes.configuration.ElasticSearchConfiguration;
 import com.bridgelabz.fundoonotes.entity.NoteEntity;
+import com.bridgelabz.fundoonotes.exception.RequestFailureException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
@@ -51,10 +55,10 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
 	
 	try
 	{
-		IndexResponse indexResponse = elasticConfig.client().index(indexRequest , RequestOptions.DEFAULT);
-	}catch(IOException e)
+	elasticConfig.client().index(indexRequest , RequestOptions.DEFAULT);
+	}catch(Exception e)
 	{
-	e.printStackTrace();
+	throw new RequestFailureException("request rejected", HttpStatus.NOT_ACCEPTABLE);
 	}
 	
 	return note;
@@ -67,15 +71,32 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
 	public NoteEntity updateNote(NoteEntity note) {
 		Map<?, ?> dataMap = objectMapper.convertValue(note , Map.class);
 		UpdateRequest updateRequest = new UpdateRequest(INDEX, TYPE, String.valueOf(note.getNoteId())).doc(dataMap);
-		UpdateResponse updateResponse = null;
 		try {
-			updateResponse = elasticConfig.client().update(updateRequest, RequestOptions.DEFAULT);
+			elasticConfig.client().update(updateRequest, RequestOptions.DEFAULT);
 			
 		}catch(IOException e)
 		{
-			e.printStackTrace();
+			throw new RequestFailureException("request rejected", HttpStatus.NOT_ACCEPTABLE);
 			}
 		return note;
+	}
+	
+	/**
+	 * service to delete note
+	 */
+	@Override
+	public boolean deleteNote(NoteEntity note) {
+		
+		DeleteRequest deleteRequest = new DeleteRequest(INDEX , TYPE , String.valueOf(note.getNoteId()));
+		try
+		{
+			elasticConfig.client().delete(deleteRequest, RequestOptions.DEFAULT);
+			return true;
+		}catch(IOException e)
+		{
+			throw new RequestFailureException("request rejected", HttpStatus.NOT_ACCEPTABLE);
+		}
+	
 	}
 
 	/**
@@ -93,7 +114,7 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
 		{
 			searchResponse = elasticConfig.client().search(searchRequest, RequestOptions.DEFAULT);
 		}catch (Exception e) {
-			e.printStackTrace();
+			throw new RequestFailureException("request rejected", HttpStatus.NOT_ACCEPTABLE);
 		}
 		return getResult(searchResponse);
 	}
@@ -107,8 +128,5 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
 		}
 		return notes;
 	}
-	
-	
-	
 	
 }
