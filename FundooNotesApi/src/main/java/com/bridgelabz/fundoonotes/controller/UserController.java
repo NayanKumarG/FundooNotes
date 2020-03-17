@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -20,13 +21,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.amazonaws.services.s3.model.S3Object;
 import com.bridgelabz.fundoonotes.dto.UpdatePasswordDto;
 import com.bridgelabz.fundoonotes.dto.UserDto;
 import com.bridgelabz.fundoonotes.dto.UserLoginDto;
 import com.bridgelabz.fundoonotes.entity.NoteEntity;
+import com.bridgelabz.fundoonotes.entity.ProfileEntity;
 import com.bridgelabz.fundoonotes.entity.User;
 import com.bridgelabz.fundoonotes.response.Response;
+import com.bridgelabz.fundoonotes.service.ProfileService;
 import com.bridgelabz.fundoonotes.service.UserService;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -37,7 +42,8 @@ public class UserController {
 	@Autowired
 	private UserService userService;
 
-	
+	@Autowired
+	private ProfileService profileService;
 	/**
 	 * Api for user registration
 	 * @param userDto creates object request by user
@@ -193,5 +199,55 @@ public class UserController {
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("collaborator notes fetched" , collaboratorNotes));
 		
 	}
+	
+	/**
+	 * Api to upload file to aws S3
+	 * @param file to upload
+	 * @param token to identify user
+	 * 
+	 */
+	@PostMapping("users/uploadFile")
+	public ResponseEntity<Response> uploadFile(@ModelAttribute MultipartFile file,@RequestHeader String token) {
+		ProfileEntity profile = profileService.uploadFileToS3(file,token);
+
+		if(profile!=null)
+
+			return ResponseEntity.status(HttpStatus.OK).body(new Response("profile added succussefully", profile));
+
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response("profile not added"));
+	}
+	
+	/**
+	 * Api to update file
+	 * @param token to identify user
+	 * 
+	 */
+	@PutMapping("users/updateFile")
+	public ResponseEntity<Response> updateProfile(@RequestHeader String token) {
+		ProfileEntity profile = profileService.updateFileInS3(token);
+
+		if(profile!=null)
+
+			return ResponseEntity.status(HttpStatus.OK).body(new Response("profile updated succussefully", profile));
+
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response("profile not updated"));
+	}
+	
+	/**
+	 * Api to get file from aws
+	 * @param token to identify user
+	 * 
+	 */
+	@GetMapping("/getFile")
+	public ResponseEntity<Response> getProfilePic(@RequestHeader String token)
+	{
+		S3Object profilePic = profileService.getProfilePic(token);
+		if(profilePic!=null)
+
+			return ResponseEntity.status(HttpStatus.OK).body(new Response("profile added succussefully", profilePic));
+
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Response("profile not added"));
+	}
+	
 }
 
