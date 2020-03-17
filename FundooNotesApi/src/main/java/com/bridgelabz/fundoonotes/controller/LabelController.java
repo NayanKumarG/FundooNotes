@@ -51,9 +51,9 @@ public class LabelController {
 	 * 
 	 */
 	@PutMapping("/labels/update")
-	public ResponseEntity<Response> updateLabel(@RequestBody LabelUpdateDto labelUpdateDto , @RequestHeader String token)
+	public ResponseEntity<Response> updateLabel(@RequestParam long labelId , @RequestBody LabelUpdateDto labelUpdateDto , @RequestHeader String token)
 	{
-		labelService.updateLabel(labelUpdateDto , token);
+		labelService.updateLabel(labelId , labelUpdateDto , token);
 		return ResponseEntity.status(HttpStatus.OK).body(new Response("Label created" , labelUpdateDto));
 	}
 	
