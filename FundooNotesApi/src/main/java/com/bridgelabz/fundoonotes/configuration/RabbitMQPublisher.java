@@ -27,5 +27,6 @@ public class RabbitMQPublisher {
 	{
 		rabbitTemplate.convertAndSend(exchange , routingKey , message);
 	}
+	
 	   
 }
