@@ -12,5 +12,4 @@ public class LabelUpdateDto {
 
 	private String labelName;
 	
-	private long labelId;
 }
