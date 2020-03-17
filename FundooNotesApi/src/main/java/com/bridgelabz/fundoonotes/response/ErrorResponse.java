@@ -1,3 +1,8 @@
+/**
+ * @author Nayan Kumar G
+ * purpose :Error response to exception
+ * date    :11-03-2020
+ */
 package com.bridgelabz.fundoonotes.response;
 
 
@@ -24,13 +29,5 @@ public class ErrorResponse {
 	   
 	private HttpStatus statusCode;
 	
-	private String email;
-
-	public ErrorResponse(String message, String email) {
-		this.message = message;
-		this.email = email;
-	}
-
-
 	
 }
