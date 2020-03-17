@@ -80,13 +80,13 @@ public class LabelServiceImpl implements LabelService{
 	 */
 	@Override
 	@Transactional
-	public void updateLabel(LabelUpdateDto labelUpdateDto, String token) {
+	public void updateLabel(long labelId , LabelUpdateDto labelUpdateDto, String token) {
 		long userId = jwtUtil.parseToken(token);
 		User user = userService.findById(userId);
 
 		if(user!=null)
 		{
-			LabelEntity label = labelRepository.findById(labelUpdateDto.getLabelId()).orElseThrow(()->new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND));
+			LabelEntity label = labelRepository.findById(labelId).orElseThrow(()->new LabelNotFoundException("label not found" , HttpStatus.NOT_FOUND));
 
 			label.setLabelName(labelUpdateDto.getLabelName());
 			labelRepository.save(label);
